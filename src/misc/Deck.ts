@@ -8,7 +8,7 @@ export interface IHandSlot {
   card: CardWidget | null;
 }
 
-// Deck class
+/** Deck class, manages the card deck, hand, and discard pile. */
 export class Deck {
   cards: ICard[];
   hand: IHandSlot[] = [];
