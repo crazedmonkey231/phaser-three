@@ -30,8 +30,6 @@ export class EditorLevel extends Level {
     this.add(gridHelper);
     const axisHelper = new THREE.AxesHelper(5);
     this.add(axisHelper);
-    this.camera.position.set(0, 5, 10);
-    this.camera.lookAt(0, 0, 0);
 
     // Load level from JSON
     Level.importJsonFile(this, "levels/level.json");
