@@ -18,6 +18,14 @@ export class LevelEditorScene extends GameScene {
     // Load any additional assets needed for the level editor here
     loadImages(this, [
       "add.png",
+      "duplicate.png",
+      "translate.png",
+      "rotate.png",
+      "scale.png",
+      "delete.png",
+      "reload.png",
+      "save.png",
+      "cube-icon.png"
     ]);
   }
 }

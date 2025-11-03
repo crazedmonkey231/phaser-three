@@ -39,7 +39,12 @@ export class ButtonWidget extends Widget<
         height
       );
     }
+  }
 
+  setupInput(): void {
+    if (!this.gameObject) return;
+    const { onHover, onClick, onOut } = this.props;
+    const scene = this.level.getGameScene();
     this.gameObject.setInteractive({ pixelPerfect: this.props.pixelPerfect ?? true });
 
     // Add hover effect

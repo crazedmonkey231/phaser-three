@@ -14,7 +14,7 @@ export class EditorLevel extends Level {
 
     // Set up input controllers
     this.getOrbitControls();
-    this.getTransformController({
+    this.getTransformTool({
       translationSnap: 1,
       rotationSnap: Math.PI / 8,
       scaleSnap: 0.1,

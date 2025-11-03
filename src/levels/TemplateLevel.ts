@@ -15,7 +15,7 @@ export class TemplateLevel extends Level {
 
     // Set up input controllers here
     this.getOrbitControls();
-    this.getTransformController({translationSnap: 1, rotationSnap: Math.PI / 8, scaleSnap: 0.1});
+    this.getTransformTool({translationSnap: 1, rotationSnap: Math.PI / 8, scaleSnap: 0.1});
 
     // Set up post-processing effects here, Example:
     this.postprocess.addRender("render");

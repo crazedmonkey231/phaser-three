@@ -18,7 +18,7 @@ export class TextWidget extends Widget<Phaser.GameObjects.Text, ITextWidgetProps
 
   create(scene: GameScene): void {
     const { text, x, y, style } = this.props as ITextWidgetProps;
-    this.gameObject = scene.add.text(x, y, text, style).setScrollFactor(0);
+    this.gameObject = scene.add.text(x, y, text, style).setScrollFactor(0).setStroke('#000000', 4);
   }
 
   dispose() {

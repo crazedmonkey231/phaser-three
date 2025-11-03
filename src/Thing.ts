@@ -2,7 +2,6 @@ import * as THREE from "three";
 import { Level } from "./Level";
 import { Octree } from "three/examples/jsm/Addons.js";
 import { ColliderShape, GameplayTag, IDamage, IThing } from "./Types";
-import { BasicBoxThing } from "./things/BasicBoxThing";
 
 /** Base class for all things in the game */
 export class Thing implements IThing {
@@ -171,4 +170,3 @@ export class Thing implements IThing {
 
 // expose class globally for deserialization
 (globalThis as any)[Thing.name] = Thing;
-(globalThis as any)[BasicBoxThing.name] = BasicBoxThing;

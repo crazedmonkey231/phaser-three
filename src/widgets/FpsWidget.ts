@@ -10,6 +10,6 @@ export class FpsWidget extends TextWidget {
   update(time: number, dt: number, args: any): void {
     if (!this.gameObject || !this.level) return;
     super.update(time, dt, args);
-    this.setText(`FPS: ${this.level.getGameScene().game.loop.actualFps} `);
+    this.setText(`FPS: ${Math.round(this.level.getGameScene().game.loop.actualFps)} `);
   }
 }

@@ -5,7 +5,7 @@ import { Weather } from "./Weather";
 import { CollisionManager } from "./Collision";
 import { AudioManager } from "./Audio";
 import { Octree } from 'three/examples/jsm/math/Octree.js';
-import { TransformController } from "./TransformController";
+import { TransformTool } from "./editor/TransformTool";
 import { OrbitControls } from "./OrbitControls";
 import { WaterPlane } from "./things/WaterPlane";
 import { WaterPBR } from "./things/WaterPBR";
@@ -54,7 +54,7 @@ export class Level extends THREE.Scene implements IService {
   audioMgr: AudioManager;
   octree: Octree | null = null;
   private orbitControls: OrbitControls | null = null;
-  private transformController: TransformController | null = null;
+  private transformTool: TransformTool | null = null;
   private resizeObserver: ResizeObserver;
   constructor(gameScene: GameScene) {
     super();
@@ -91,7 +91,7 @@ export class Level extends THREE.Scene implements IService {
         thing.update(time, dt, { level: this, ...args });
       }
     }
-    this.collisionMgr.update();
+    this.collisionMgr.update(time, dt, args);
     for (const widget of this.widgets.values()) {
       widget.update(time, dt, args);
     }
@@ -103,9 +103,9 @@ export class Level extends THREE.Scene implements IService {
 
   dispose() {
     this.resizeObserver.disconnect();
-    if (this.transformController) {
-      this.transformController.dispose();
-      this.transformController = null;
+    if (this.transformTool) {
+      this.transformTool.dispose();
+      this.transformTool = null;
     }
     this.things.forEach(thing => thing.dispose());
     this.things.clear();
@@ -150,12 +150,12 @@ export class Level extends THREE.Scene implements IService {
     });
   }
   
-  // Create and return a TransformController
-  getTransformController(params: any = {}) {
-    if (!this.transformController) {
-      this.transformController = new TransformController(this, params);
+  // Create and return a TransformTool
+  getTransformTool(params: any = {}) {
+    if (!this.transformTool) {
+      this.transformTool = new TransformTool(this, params);
     }
-    return this.transformController;
+    return this.transformTool;
   }
 
   // Create and return OrbitControls
