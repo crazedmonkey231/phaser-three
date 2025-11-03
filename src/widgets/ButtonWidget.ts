@@ -30,8 +30,7 @@ export class ButtonWidget extends Widget<
   }
 
   create(scene: GameScene): void {
-    const { texture, x, y, width, height, onHover, onClick, onOut } =
-      this.props;
+    const { texture, x, y, width, height } = this.props;
     this.gameObject = scene.add.image(x, y, texture).setScrollFactor(0);
     if (width && height) {
       (this.gameObject as Phaser.GameObjects.Image).setDisplaySize(

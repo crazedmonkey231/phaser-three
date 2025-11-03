@@ -31,6 +31,7 @@ export class TransformTool implements IService {
   private rotationSnap: number = 15;
   private scaleSnap: number = 0.1;
   private timeOfDay: number = 12;
+  private toolTipText: TextWidget | null = null;
   constructor(level: Level, params: any = {}) {
     this.level = level;
     this.scene = level.getGameScene();
@@ -197,6 +198,7 @@ export class TransformTool implements IService {
   dispose() {
     if (this.transformControls) {
       this.clearWidgets();
+      this.toolTipText = null;
       this.scene.input?.off('pointerdown');
       this.scene.input.keyboard?.off('keydown');
       this.transformControls.detach();
@@ -232,9 +234,23 @@ export class TransformTool implements IService {
     this.level.create();
   }
 
+  private setToolTipText(text: string) {
+    if (this.toolTipText) {
+      this.toolTipText.setText(text);
+    }
+  }
+
   private createButtons(){
     const width = this.scene.game.canvas.width;
     const height = this.scene.game.canvas.height;
+
+    this.toolTipText = new TextWidget(this.level, {
+      name: "toolTip",
+      text: '',
+      x: 10,
+      y: height - 30,
+      style: { font: '16px Arial', color: '#ffffff' }
+    });
 
     new FpsWidget(this.level, {
       name: "fpsText",
@@ -253,7 +269,7 @@ export class TransformTool implements IService {
     });
 
     new ButtonWidget(this.level, {
-      name: "duplicate button",
+      name: "Duplicate",
       texture: 'duplicate',
       x: width - 60,
       y: 50,
@@ -272,7 +288,7 @@ export class TransformTool implements IService {
     });
 
     new ButtonWidget(this.level, {
-      name: "translate button",
+      name: "Translate",
       texture: 'translate',
       x: width - 60,
       y: 130,
@@ -289,7 +305,7 @@ export class TransformTool implements IService {
     });
 
     new ButtonWidget(this.level, {
-      name: "rotate button",
+      name: "Rotate",
       texture: 'rotate',
       x: width - 60,
       y: 200,
@@ -306,7 +322,7 @@ export class TransformTool implements IService {
     });
 
     new ButtonWidget(this.level, {
-      name: "scale button",
+      name: "Scale",
       texture: 'scale',
       x: width - 60,
       y: 270,
@@ -323,7 +339,7 @@ export class TransformTool implements IService {
     });
 
     new ButtonWidget(this.level, {
-      name: "delete button",
+      name: "Delete",
       texture: 'delete',
       x: width - 60,
       y: 340,
@@ -340,7 +356,7 @@ export class TransformTool implements IService {
     });
 
     new ButtonWidget(this.level, {
-      name: "reload button",
+      name: "Reload",
       texture: 'reload',
       x: width - 60,
       y: 410,
@@ -357,7 +373,7 @@ export class TransformTool implements IService {
     });
 
     new ButtonWidget(this.level, {
-      name: "save button",
+      name: "Save",
       texture: 'save',
       x: width - 60,
       y: 480,
@@ -531,6 +547,16 @@ export class TransformTool implements IService {
       const timeOfDay = this.level.weather.getTimeOfDay();
       slider.setSliderValue(timeOfDay);
       slider.setText(`${timeOfDay.toFixed(1)}`);
+    }
+    const mousePos = this.scene.input.activePointer;
+    if (this.hoveredWidget && this.hoveredWidget.props && this.toolTipText && this.toolTipText.gameObject) {
+      const textWidth = this.toolTipText.gameObject.width;
+      const textHeight = this.toolTipText.gameObject.height;
+      this.toolTipText.gameObject.setPosition(mousePos.x - textWidth, mousePos.y - textHeight + 25);
+      this.toolTipText.gameObject.setDepth(1000);
+      this.setToolTipText(this.hoveredWidget.props.name || '');
+    } else {
+      this.setToolTipText('');
     }
   }
 }
