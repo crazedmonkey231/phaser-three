@@ -540,8 +540,8 @@ export class TransformTool implements IService {
     this.createObjectTray();
   }
 
+  /** Update the transform tool, called from level update */
   update(time: number, dt: number, args: any) {
-    // Update logic if needed
     const slider: SliderWidget | undefined = this.level.widgets.get("Time of Day") as SliderWidget;
     if (slider) {
       const timeOfDay = this.level.weather.getTimeOfDay();
