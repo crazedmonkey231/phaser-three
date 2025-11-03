@@ -3,7 +3,17 @@ import { Level } from "./Level";
 import { Octree } from "three/examples/jsm/Addons.js";
 import { ColliderShape, GameplayTag, IDamage, IThing } from "./Types";
 
-/** Base class for all things in the game */
+/** 
+ * Base class for all things in the game.
+ * 
+ * A Thing is any object that exists in the 3D world and has a position, can be updated, and can interact with other things.
+ * 
+ * It provides basic functionality such as tagging, health management, and serialization to/from JSON.
+ * 
+ * To create a new Thing, extend this class and implement the create() method to set up its 3D representation.
+ * 
+ * The Thing group userData is set to reference the Thing instance for easy access during collision detection and interaction.
+ */
 export class Thing implements IThing {
   level: Level = null as any;
   name: string;
