@@ -13,9 +13,8 @@ export class TemplateLevel extends Level {
   create(): void {
     super.create(); 
 
-    // Set up input controllers here
-    this.getOrbitControls();
-    this.getTransformTool({translationSnap: 1, rotationSnap: Math.PI / 8, scaleSnap: 0.1});
+    // Set up controllers here
+    this.getTransformTool(); // Enable transform tool, remove if not needed
 
     // Set up post-processing effects here, Example:
     this.postprocess.addRender("render");
@@ -23,31 +22,20 @@ export class TemplateLevel extends Level {
     this.postprocess.addPosterize("toon", 100);
     this.postprocess.addOutput("output");
 
-    // Set up weather effects here
-    // weather.toggle();
-    this.weather.setTimeOfDay(17);
+    // Set up weather here or use transform tool to adjust in editor
 
-    // Create and add generic 3D objects here
+    // Create and add optional generic 3D objects here
     const gridHelper = new THREE.GridHelper(10, 10);
     this.add(gridHelper);
     const axisHelper = new THREE.AxesHelper(5);
     this.add(axisHelper);
-    this.camera.position.set(0, 5, 10);
-    this.camera.lookAt(0, 0, 0);
 
     // Load level from JSON or other Things here
-    // Level.importJsonFile(this, "levels/level.json");
+    Level.importJsonFile(this, "levels/level.json");
 
-    // Set up collisions here
+    // Set up collisions here or when you load Things
 
     // Set up widgets here
-    new FpsWidget(this, {
-      name: "fpsText",
-      text: "FPS: 60",
-      x: 10,
-      y: 10,
-      style: { font: "24px Arial", color: "#ffffff" },
-    });
   }
 
   update(time: number, dt: number, args: any) {

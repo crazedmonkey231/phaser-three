@@ -9,7 +9,11 @@ import { WidgetType } from "../Types";
 import { FpsWidget } from "../widgets/FpsWidget";
 
 
-/** A level class demonstrating voxel map usage */
+/** 
+ * A level class demonstrating voxel map usage.
+ * 
+ * Work in progress.
+ */
 export class VoxelLevel extends Level {
   private voxelMap: VoxelMap | undefined;
   private fpsText: WidgetType | undefined;
