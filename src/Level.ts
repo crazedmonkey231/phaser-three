@@ -56,6 +56,7 @@ export class Level extends THREE.Scene implements IService {
   private orbitControls: OrbitControls | null = null;
   private transformTool: TransformTool | null = null;
   private resizeObserver: ResizeObserver;
+  private paused: boolean = false;
   constructor(gameScene: GameScene) {
     super();
     this.gameScene = gameScene;
@@ -84,8 +85,9 @@ export class Level extends THREE.Scene implements IService {
 
   update(time: number, dt: number, args: any) {
     if (this.transformTool) this.transformTool.update(time, dt, args);
+    if (this.orbitControls) this.orbitControls.update(time, dt, args);
+    if (this.paused) return;
     this.postprocess.update(time, dt, args);
-    if(this.orbitControls) this.orbitControls.update(time, dt, args);
     this.weather.update(time, dt, args);
     for (const thing of this.things) {
       if (thing.alive) {
@@ -176,8 +178,21 @@ export class Level extends THREE.Scene implements IService {
     return JSON.stringify(this.getThingsJsonObject());
   }
 
+  getPaused(): boolean {
+    return this.paused;
+  }
+
+  setPaused(paused: boolean): void {
+    this.paused = paused;
+  }
+
+  togglePaused(): void {
+    this.paused = !this.paused;
+  }
+
   getJsonString(): string {
     return JSON.stringify({
+      paused: this.paused,
       weather: this.weather.getJsonObject(),
       camera: {
         transform: {
@@ -203,6 +218,9 @@ export class Level extends THREE.Scene implements IService {
   }
 
   static importJson(level: Level, json: any): void {
+    if (json.paused !== undefined) {
+      level.setPaused(json.paused);
+    }
     if (json.weather) {
       const weatherJson = json.weather;
       level.weather.setTimeOfDay(weatherJson.timeOfDay);
