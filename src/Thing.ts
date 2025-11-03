@@ -13,6 +13,8 @@ import { ColliderShape, GameplayTag, IDamage, IThing } from "./Types";
  * To create a new Thing, extend this class and implement the create() method to set up its 3D representation.
  * 
  * The Thing group userData is set to reference the Thing instance for easy access during collision detection and interaction.
+ * 
+ * Be sure to expose your Thing subclass globally for deserialization (saving/loading) by adding it to globalThis.
  */
 export class Thing implements IThing {
   level: Level = null as any;
