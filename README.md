@@ -70,5 +70,5 @@ This project serves as a foundation for games that require both 2D UI elements a
    ```bash
    npm run build
    ```
-2. Zip all the files in the `dist` folder.
+2. Then take all files inside of the `dist` and zip them.
 3. Upload zip to itch for web game.
