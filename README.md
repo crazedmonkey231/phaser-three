@@ -64,3 +64,11 @@ A simple starter project that combines the power of **Three.js** for 3D graphics
   - `levels/` - Level definition files
 
 This project serves as a foundation for games that require both 2D UI elements and 3D world interaction, perfect for first-person games with rich user interfaces or 3D worlds with 2D overlays.
+
+## Itch Ready
+1. Build project:
+   ```bash
+   npm run build
+   ```
+2. Zip all the files in the `dist` folder.
+3. Upload zip to itch for web game.
