@@ -169,41 +169,13 @@ export function playTrackAtObject(trackName: keyof typeof sounds, object: THREE.
   return playTrackAtPosition(trackName, tmpObjectPos)
 }
 
-/** load all sounds from /audio/sounds folder */
-function getAllSounds() {
-  const context = (import.meta as any).glob('./audio/sounds/*.ogg', { eager: true })
-  const sounds: { [key: string]: Howl } = {}
-
-  for (const path in context) {
-    const key = path.split('/').pop()?.replace('.ogg', '') || ''
-    sounds[key] = new Howl({
-      src: [A(`${key}.ogg`)],
-      volume: 1,
-    })
-  }
-
-  return sounds
-}
-
-// load all music from /audio/music folder
-function getAllMusic() {
-  const context = (import.meta as any).glob('./audio/music/*.ogg', { eager: true })
-  const music: { [key: string]: Howl } = {}
-
-  for (const path in context) {
-    const key = path.split('/').pop()?.replace('.ogg', '') || ''
-    music[key] = new Howl({
-      src: [A(`music/${key}.ogg`)],
-      volume: 1,
-      loop: true,
-    })
-  }
-
-  return music
-}
-
 // all sounds
-export const sounds = getAllSounds()
+export const sounds = {
+  button_hover: new Howl({ src: [A('sounds/button_hover.ogg')], volume: 1.0 }),
+  button_click: new Howl({ src: [A('sounds/button_click.ogg')], volume: 1.0 }),
+}
 
 // all music
-export const music = getAllMusic()
+export const music = {
+  background: new Howl({ src: [A('music/background.ogg')], volume: 0.3, loop: true }),
+}
