@@ -7,9 +7,6 @@ import { AudioManager } from "./Audio";
 import { Octree } from 'three/examples/jsm/math/Octree.js';
 import { TransformTool } from "./editor/TransformTool";
 import { OrbitControls } from "./OrbitControls";
-import { WaterPlane } from "./things/WaterPlane";
-import { WaterPBR } from "./things/WaterPBR";
-import { GrassPlane } from "./things/GrassPlane";
 import { Thing } from "./Thing";
 import { IService, IThing, WidgetType } from "./Types";
 
@@ -190,6 +187,7 @@ export class Level extends THREE.Scene implements IService {
     this.paused = !this.paused;
   }
 
+  /** Exports the level to a JSON string. */
   getJsonString(): string {
     return JSON.stringify({
       paused: this.paused,
@@ -205,6 +203,7 @@ export class Level extends THREE.Scene implements IService {
     });
   }
 
+  /** Exports the level to a JSON file and triggers a download in the browser. */
   exportJson(): any {
     // save to file
     const jsonString = this.getJsonString();
@@ -217,6 +216,7 @@ export class Level extends THREE.Scene implements IService {
     URL.revokeObjectURL(url);
   }
 
+  /** Loads a level from a JSON object. */
   static importJson(level: Level, json: any): void {
     if (json.paused !== undefined) {
       level.setPaused(json.paused);
@@ -243,15 +243,15 @@ export class Level extends THREE.Scene implements IService {
     }
   }
 
+  /** Loads a level from a JSON file in the levels directory. */
   static async importJsonFile(level: Level, path: string): Promise<void> {
+    const levelDir = 'levels/';
+    if (!path.startsWith(levelDir)) {
+      path = levelDir + path;
+    }
     const response = await fetch(path);
     const json = await response.json();
     const jsonObj = typeof json === 'string' ? JSON.parse(json) : json;
     return this.importJson(level, jsonObj);
   }
 }
-
-// Expose things globally
-(globalThis as any)[WaterPlane.name] = WaterPlane;
-(globalThis as any)[WaterPBR.name] = WaterPBR;
-(globalThis as any)[GrassPlane.name] = GrassPlane;
