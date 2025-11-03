@@ -14,11 +14,7 @@ export class EditorLevel extends Level {
 
     // Set up input controllers
     this.getOrbitControls();
-    this.getTransformTool({
-      translationSnap: 1,
-      rotationSnap: Math.PI / 8,
-      scaleSnap: 0.1,
-    });
+    this.getTransformTool();
 
     // Set up post-processing effects
     this.postprocess.addRender("render");
@@ -44,15 +40,6 @@ export class EditorLevel extends Level {
 
     // Load level from JSON
     Level.importJsonFile(this, "levels/level.json");
-
-    // Set up FPS widget
-    new FpsWidget(this, {
-      name: "fpsText",
-      text: "FPS: 60",
-      x: 10,
-      y: 10,
-      style: { font: "24px Arial", color: "#ffffff" },
-    });
   }
 
   update(time: number, dt: number, args: any) {

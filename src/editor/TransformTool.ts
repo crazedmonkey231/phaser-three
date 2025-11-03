@@ -10,6 +10,7 @@ import { Thing } from "../Thing";
 import { ObjectTray } from "./ObjectTray";
 import { BasicBoxThing } from "../things/BasicBoxThing";
 import { SliderWidget } from "../widgets/SliderWidget";
+import { FpsWidget } from "../widgets/FpsWidget";
 
 /** 
  * This is traditionally called a Level Editor.
@@ -23,9 +24,11 @@ export class TransformTool {
   private scene: GameScene;
   private transformControls: TransformControls | null = null;
   private gizmo: THREE.Object3D | null = null;
-  private widgets: Map<string, WidgetType> = new Map();
   private selected: IThing | null = null;
   private hoveredWidget: WidgetType | null = null;
+  private translationSnap: number = 1;
+  private rotationSnap: number = 15;
+  private scaleSnap: number = 0.1;
   constructor(level: Level, params: any = {}) {
     this.level = level;
     this.scene = level.getGameScene();
@@ -77,6 +80,10 @@ export class TransformTool {
     }
 
     this.createWidgets();
+
+    this.scene.game.scale.on("resize", () => {
+      this.createWidgets();
+    });
   }
 
   setSelected(thing: IThing | null, multiSelect: boolean = false) {
@@ -147,12 +154,27 @@ export class TransformTool {
   }
 
   setSnap(translationSnap?: number, rotationSnap?: number, scaleSnap?: number) {
+    if (translationSnap !== undefined) {
+      this.translationSnap = translationSnap;
+    } else {
+      this.translationSnap = 1;
+    }
+    if (rotationSnap !== undefined) {
+      this.rotationSnap = rotationSnap;
+    } else {
+      this.rotationSnap = 15;
+    }
+    if (scaleSnap !== undefined) {
+      this.scaleSnap = scaleSnap;
+    } else {
+      this.scaleSnap = 0.1;
+    }
     if (this.transformControls) {
-      this.transformControls.setTranslationSnap(translationSnap || 1);
+      this.transformControls.setTranslationSnap(this.translationSnap);
       this.transformControls.setRotationSnap(
-        THREE.MathUtils.degToRad(rotationSnap || 15)
+        THREE.MathUtils.degToRad(this.rotationSnap)
       );
-      this.transformControls.setScaleSnap(scaleSnap || 0.1);
+      this.transformControls.setScaleSnap(this.scaleSnap);
     }
   }
 
@@ -190,10 +212,9 @@ export class TransformTool {
   }
 
   clearWidgets() {
-    this.widgets.forEach((widget) => {
+    this.level.widgets.forEach((widget) => {
       widget.dispose();
     });
-    this.widgets.clear();
   }
 
   deleteSelectedThing() {
@@ -210,7 +231,14 @@ export class TransformTool {
   }
 
   private createButtons(){
-    this.clearWidgets();
+    new FpsWidget(this.level, {
+      name: "fpsText",
+      text: "",
+      x: 10,
+      y: 10,
+      style: { font: "24px Arial", color: "#ffffff" },
+    });
+    
     new TextWidget(this.level, {
       name: "transform instructions",
       text: 'Controls:\n1. Duplicate\n2. Translate\n3. Rotate\n4. Scale\n5. Delete\n9. Reset\n0. Export',
@@ -341,14 +369,10 @@ export class TransformTool {
       }
     });
 
-    const initialTranslationSnap = 1;
-    const initialRotationSnap = 15;
-    const initialScaleSnap = 1;
-
     new SliderWidget(this.level, {
       name: "Translation\nSnap",
-      text: `${initialTranslationSnap}`,
-      initialValue: initialTranslationSnap,
+      text: `${this.translationSnap}`,
+      initialValue: this.translationSnap,
       x: 220,
       y: 50,
       width: 100,
@@ -369,11 +393,11 @@ export class TransformTool {
         this.level.getOrbitControls().setEnabled(true);
       }
     });
-
+    
     new SliderWidget(this.level, {
       name: "Rotation\nSnap",
-      text: `${initialRotationSnap}`,
-      initialValue: initialRotationSnap,
+      text: `${this.rotationSnap}`,
+      initialValue: this.rotationSnap,
       x: 370,
       y: 50,
       width: 100,
@@ -397,8 +421,8 @@ export class TransformTool {
 
     new SliderWidget(this.level, {
       name: "Scale\nSnap",
-      text: `${initialScaleSnap}`,
-      initialValue: initialScaleSnap,
+      text: `${this.scaleSnap}`,
+      initialValue: this.scaleSnap,
       x: 520,
       y: 50,
       width: 100,
@@ -421,9 +445,9 @@ export class TransformTool {
     });
 
     this.setSnap(
-      initialTranslationSnap,
-      initialRotationSnap,
-      initialScaleSnap
+      this.translationSnap,
+      this.rotationSnap,
+      this.scaleSnap
     );
   }
 
@@ -444,6 +468,7 @@ export class TransformTool {
 
   /** Create all widgets for the TransformTool */
   createWidgets() {
+    this.clearWidgets();
     this.createButtons();
     this.createObjectTray();
   }
