@@ -15,8 +15,12 @@ export interface IObjectTrayProps extends IWidgetProps {
   items?: IObjectTrayItem[];
 }
 
-/** ObjectTray class for managing objects in the editor
- * Holds buttons for dragging configured objects into the level.
+/** 
+ * ObjectTray class for managing objects in the editor.
+ * 
+ * Holds buttons for spawning configured objects into the level at 0, 0, 0.
+ * 
+ * Add items in the createObjectTray method in the TransformTool class.
  */
 export class ObjectTray extends Widget<Phaser.GameObjects.Container, IObjectTrayProps> {
   constructor(level: Level, props: IObjectTrayProps) {
