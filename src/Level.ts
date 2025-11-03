@@ -83,8 +83,9 @@ export class Level extends THREE.Scene implements IService {
   }
 
   update(time: number, dt: number, args: any) {
+    if (this.transformTool) this.transformTool.update(time, dt, args);
     this.postprocess.update(time, dt, args);
-    this.orbitControls?.update(time, dt, args);
+    if(this.orbitControls) this.orbitControls.update(time, dt, args);
     this.weather.update(time, dt, args);
     for (const thing of this.things) {
       if (thing.alive) {
@@ -153,6 +154,7 @@ export class Level extends THREE.Scene implements IService {
   // Create and return a TransformTool
   getTransformTool(params: any = {}) {
     if (!this.transformTool) {
+      this.getOrbitControls();
       this.transformTool = new TransformTool(this, params);
     }
     return this.transformTool;
@@ -176,6 +178,7 @@ export class Level extends THREE.Scene implements IService {
 
   getJsonString(): string {
     return JSON.stringify({
+      weather: this.weather.getJsonObject(),
       camera: {
         transform: {
           position: this.camera.position,
@@ -200,6 +203,11 @@ export class Level extends THREE.Scene implements IService {
   }
 
   static importJson(level: Level, json: any): void {
+    if (json.weather) {
+      const weatherJson = json.weather;
+      level.weather.setTimeOfDay(weatherJson.timeOfDay);
+      level.weather.setEnabled(weatherJson.enabled);
+    }
     if (json.camera) {
       const transform = json.camera.transform;
       const { x, y, z } = transform.position;

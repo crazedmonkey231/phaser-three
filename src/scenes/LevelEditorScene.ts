@@ -25,7 +25,8 @@ export class LevelEditorScene extends GameScene {
       "delete.png",
       "reload.png",
       "save.png",
-      "cube-icon.png"
+      "cube-icon.png",
+      "toggle_weather.png"
     ]);
   }
 }

@@ -1,7 +1,6 @@
 import * as THREE from "three";
 import { GameScene } from "../GameScene";
 import { Level } from "../Level";
-import { FpsWidget } from "../widgets/FpsWidget";
 
 /** A level class for the level editor */
 export class EditorLevel extends Level {
@@ -12,8 +11,7 @@ export class EditorLevel extends Level {
   create(): void {
     super.create();
 
-    // Set up input controllers
-    this.getOrbitControls();
+    // Set up level editor tools
     this.getTransformTool();
 
     // Set up post-processing effects
@@ -26,9 +24,6 @@ export class EditorLevel extends Level {
     this.postprocess.addFXAA("fxaa");
     this.postprocess.addOutput("output");
     // this.postprocess.addShaderPass("test", TestShader);
-
-    // Set up weather effects
-    this.weather.setTimeOfDay(17);
 
     // Create and add generic 3D objects
     const gridHelper = new THREE.GridHelper(10, 10);

@@ -17,6 +17,9 @@ export class Weather implements IService {
   private enabled: boolean = false;
   private lastUpdate: number = 0;
   private readonly premUpdateSpeed = 10000;
+  private readonly dayUpdateSpeed = 300000; // 5 minutes per day cycle
+  private readonly dayTime = 18;
+  private readonly nightTime = 6;
   constructor(level: Level) {
     this.level = level;
     this.sky = new Sky();
@@ -52,28 +55,55 @@ export class Weather implements IService {
     this.enabled = !this.enabled;
   }
 
+  setEnabled(value: boolean) {
+    this.enabled = value;
+  }
+
+  getEnabled(): boolean { 
+    return this.enabled;
+  }
+
   setTimeOfDay(hour: number) {
-    this.timeofDay = (hour - 4) % 24;
+    this.timeofDay = hour % 24;
     this.calculateSunPosition();
   }
 
-  calculateSunPosition() {
-    const theta = Math.PI * ( (this.timeofDay / 18) - 0.5); 
-    const phi = 2 * Math.PI * (0.205 - 0.5);
-    const sun = new THREE.Vector3();
-    sun.x = Math.cos(phi) * Math.sin(theta);
-    sun.y = Math.cos(theta);
-    sun.z = Math.sin(phi) * Math.sin(theta);
-    this.sunPosition.copy(sun);
-    this.sky?.material.uniforms['sunPosition'].value.copy(sun);
-    renderer.toneMappingExposure = Math.max(0.1, sun.y / 2);
-    this.sky!.material.needsUpdate = true;
+  getTimeOfDay(): number {
+    return this.timeofDay;
+  }
+
+  private calculateSunPosition() {
+    const dayLength = this.dayTime - this.nightTime;
+    const totalNightLength = 24 - dayLength;
+    const offsetTime = (this.timeofDay - this.nightTime + 24) % 24;
+    const inDay = offsetTime < dayLength;
+    const cycleSpan = inDay ? dayLength : totalNightLength;
+    const cycleTime = offsetTime - (inDay ? 0 : dayLength);
+    const progress = cycleTime / cycleSpan;
+
+    let theta: number;
+    if (inDay) {
+      theta = Math.PI * progress - Math.PI / 2;
+    } else {
+      theta = Math.PI * progress + Math.PI / 2;
+    }
+
+    const phi = 2 * Math.PI * 0.25;
+    this.sunPosition.set(
+      Math.cos(phi) * Math.sin(theta),
+      Math.cos(theta),
+      Math.sin(phi) * Math.sin(theta)
+    );
+
+    this.sky?.material.uniforms['sunPosition'].value.copy(this.sunPosition);
+    renderer.toneMappingExposure = Math.max(0.1, this.sunPosition.y * 0.5);
+    if (this.sky) this.sky.material.needsUpdate = true;
   }
 
   update(time: number, delta: number, args: any) {
     if (!this.enabled) return;
     // update time of day
-    this.timeofDay += delta / 1000 / 5;
+    this.timeofDay += delta / this.dayUpdateSpeed * 24;
     this.timeofDay %= 24;
     this.calculateSunPosition();
     this.lastUpdate += delta;
@@ -114,5 +144,12 @@ export class Weather implements IService {
     this.fog = null;
     this.level.fog = null;
     this.level = null as any;
+  }
+
+  getJsonObject(): any {
+    return {
+      timeOfDay: this.timeofDay,
+      enabled: this.enabled,
+    };
   }
 }

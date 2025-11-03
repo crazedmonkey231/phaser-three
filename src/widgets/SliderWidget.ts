@@ -36,6 +36,12 @@ export class SliderWidget extends Widget<Phaser.GameObjects.Container, ISliderWi
     this.gameObject.add([text, name, track, this.thumb]);
   }
 
+  setSliderValue(value: number): void {
+    if (!this.thumb) return;
+    const { min, max, width } = this.props;
+    this.thumb.x = Phaser.Math.Clamp(((value - min) / (max - min)) * width, 0, width);
+  }
+
   setupInput(): void {
     if (!this.gameObject || !this.thumb) return;
     const { width, min, max, step, initialValue, onChange } = this.props;

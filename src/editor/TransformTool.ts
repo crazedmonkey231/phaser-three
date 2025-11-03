@@ -5,7 +5,7 @@ import { simpleRaycastMouse } from "../Utils";
 import { GameScene } from "../GameScene";
 import { TextWidget } from "../widgets/TextWidget";
 import { ButtonWidget } from "../widgets/ButtonWidget";
-import { IThing, WidgetType } from "../Types";
+import { IThing, WidgetType, IService } from '../Types';
 import { Thing } from "../Thing";
 import { ObjectTray } from "./ObjectTray";
 import { BasicBoxThing } from "../things/BasicBoxThing";
@@ -19,7 +19,8 @@ import { FpsWidget } from "../widgets/FpsWidget";
  * 
  * Save the level then load it for your game.
  */
-export class TransformTool {
+export class TransformTool implements IService {
+  name: string = "TransformTool";
   private level: Level;
   private scene: GameScene;
   private transformControls: TransformControls | null = null;
@@ -29,6 +30,7 @@ export class TransformTool {
   private translationSnap: number = 1;
   private rotationSnap: number = 15;
   private scaleSnap: number = 0.1;
+  private timeOfDay: number = 12;
   constructor(level: Level, params: any = {}) {
     this.level = level;
     this.scene = level.getGameScene();
@@ -231,6 +233,9 @@ export class TransformTool {
   }
 
   private createButtons(){
+    const width = this.scene.game.canvas.width;
+    const height = this.scene.game.canvas.height;
+
     new FpsWidget(this.level, {
       name: "fpsText",
       text: "",
@@ -247,7 +252,6 @@ export class TransformTool {
       style: { font: '16px Arial', color: '#ffffff' }
     });
 
-    const width = this.scene.game.canvas.width;
     new ButtonWidget(this.level, {
       name: "duplicate button",
       texture: 'duplicate',
@@ -393,7 +397,7 @@ export class TransformTool {
         this.level.getOrbitControls().setEnabled(true);
       }
     });
-    
+
     new SliderWidget(this.level, {
       name: "Rotation\nSnap",
       text: `${this.rotationSnap}`,
@@ -449,9 +453,56 @@ export class TransformTool {
       this.rotationSnap,
       this.scaleSnap
     );
+
+    new SliderWidget(this.level, {
+      name: "Time of Day",
+      text: `${this.timeOfDay}`,
+      initialValue: this.timeOfDay,
+      x: 670,
+      y: 50,
+      width: 100,
+      min: 0,
+      max: 24,
+      step: 0.1,
+      onChange: (value: number) => {
+        this.timeOfDay = value;
+        this.level.weather.setTimeOfDay(this.timeOfDay);
+      },
+      onHover: (widget: WidgetType) => {
+        this.hoveredWidget = widget;
+        this.level.getOrbitControls().setEnabled(false);
+      },
+      onClick: (widget: WidgetType) => {
+      },
+      onOut: (widget: WidgetType) => {
+        this.hoveredWidget = null;
+        this.level.getOrbitControls().setEnabled(true);
+      }
+    });
+    this.level.weather.setTimeOfDay(this.timeOfDay);
+
+    new ButtonWidget(this.level, {
+      name: "Toggle Weather",
+      x: width - 60,
+      y: 550,
+      pixelPerfect: false,
+      texture: 'toggle_weather',
+      onClick: (widget: WidgetType) => {
+        this.level.weather.toggle();
+      },
+      onHover: (widget: WidgetType) => {
+        this.hoveredWidget = widget;
+        this.level.getOrbitControls().setEnabled(false);
+      },
+      onOut: (widget: WidgetType) => {
+        this.hoveredWidget = null;
+        this.level.getOrbitControls().setEnabled(true);
+      }
+    });
+
   }
 
-  /** Create the object tray for the transform tool, add custom things here */
+  /** Create the object tray for the transform tool, add custom things here. Ensure objects are exposed globally for saving and loading. */
   private createObjectTray() {
     new ObjectTray(this.level, {
       name: "object tray",
@@ -471,5 +522,15 @@ export class TransformTool {
     this.clearWidgets();
     this.createButtons();
     this.createObjectTray();
+  }
+
+  update(time: number, dt: number, args: any) {
+    // Update logic if needed
+    const slider: SliderWidget | undefined = this.level.widgets.get("Time of Day") as SliderWidget;
+    if (slider) {
+      const timeOfDay = this.level.weather.getTimeOfDay();
+      slider.setSliderValue(timeOfDay);
+      slider.setText(`${timeOfDay.toFixed(1)}`);
+    }
   }
 }
