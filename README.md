@@ -52,6 +52,10 @@ A simple starter project that combines the power of **Three.js** for 3D graphics
   - `levels/` - Level management and templates
   - `shaders/` - Custom GLSL shaders
   - `material/` - Custom Three.js materials
+  - `editor/` - Custom Editor module
+  - `misc/` - Regular classes
+  - `object3D/` - Regular Three.js objects
+  - `voxel/` - Custom voxel module
 
 - `public/` - Static assets
   - `textures/` - Image assets and sprites
