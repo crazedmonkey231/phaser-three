@@ -3,6 +3,7 @@ import { GameScene } from "../GameScene";
 import { Level } from "../Level";
 import { GlitchyEmbossShader } from "../shaders/GlitchyEmboss";
 import { KuwaharaShader } from "../shaders/KuwaharaShader";
+import { PencilEdgeShader } from "../shaders/PencilEdge";
 
 /** A level class for the level editor */
 export class EditorLevel extends Level {
@@ -25,7 +26,7 @@ export class EditorLevel extends Level {
     });
     this.postprocess.addFXAA("fxaa");
     this.postprocess.addOutput("output");
-    // this.postprocess.addShaderPass("test", KuwaharaShader);
+    // this.postprocess.addShaderPass("test", PencilEdgeShader);
 
     // Create and add generic 3D objects
     const gridHelper = new THREE.GridHelper(10, 10);
@@ -42,7 +43,7 @@ export class EditorLevel extends Level {
 
     // Update test shader uniforms
     // const pass: any = this.postprocess.getPass("test");
-    // pass.uniforms.time.value += delta;
+    // pass.uniforms.time.value += delta / 100;
     // pass.uniforms.resolution.value.set(this.gameScene.game.canvas.width, this.gameScene.game.canvas.height);
   }
 
