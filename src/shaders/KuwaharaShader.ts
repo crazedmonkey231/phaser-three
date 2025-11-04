@@ -114,7 +114,7 @@ export const KuwaharaShader: Shader = {
       uvMax = 1.0 - texel * 0.5;
       
       // Normalized pixel coordinates (from 0 to 1)
-      vec2 uv = (gl_FragCoord.xy + 0.25) * texel;
+      vec2 uv = (gl_FragCoord.xy + 0.5) * texel;
       gl_FragColor = vec4(basicKuwahara(uv, RADIUS), 1.0);
     }
   `,
