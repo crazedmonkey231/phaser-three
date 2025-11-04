@@ -4,7 +4,7 @@ import { Shader } from "../PostProcess";
 export const HologramShader: Shader = {
   uniforms: {
     tDiffuse: { value: null },
-    time: { value: 1 },
+    time: { value: 0.0 },
     alpha: { value: 0.5 }
   },
   vertexShader: `
