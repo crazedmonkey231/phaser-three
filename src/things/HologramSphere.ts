@@ -29,6 +29,14 @@ export class HologramSphere extends Thing {
       this.material.uniforms.time.value = time / 1000;
     }
   }
+
+  dispose(): void {
+    if (this.material) {
+      this.material.dispose();
+      this.material = null;
+    }
+    super.dispose();
+  }
 }
 
 // expose class globally for deserialization
