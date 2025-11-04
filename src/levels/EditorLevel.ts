@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { GameScene } from "../GameScene";
 import { Level } from "../Level";
+import { GlitchyEmbossShader } from "../shaders/GlitchyEmboss";
 
 /** A level class for the level editor */
 export class EditorLevel extends Level {
@@ -35,9 +36,13 @@ export class EditorLevel extends Level {
     Level.importJsonFile(this, "level.json");
   }
 
-  update(time: number, dt: number, args: any) {
-    super.update(time, dt, args);
-    // this.postprocess.getPass("test").uniforms.time.value = time * 0.001;
+  update(time: number, delta: number, args: any) {
+    super.update(time, delta, args);
+
+    // Update test shader uniforms
+    // const pass: any = this.postprocess.getPass("test");
+    // pass.uniforms.time.value += delta;
+    // pass.uniforms.resolution.value.set(this.gameScene.game.canvas.width, this.gameScene.game.canvas.height);
   }
 
   dispose(): void {
