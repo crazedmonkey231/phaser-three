@@ -25,7 +25,7 @@ export class EditorLevel extends Level {
     });
     this.postprocess.addFXAA("fxaa");
     this.postprocess.addOutput("output");
-    this.postprocess.addShaderPass("test", KuwaharaShader);
+    // this.postprocess.addShaderPass("test", KuwaharaShader);
 
     // Create and add generic 3D objects
     const gridHelper = new THREE.GridHelper(10, 10);
@@ -41,9 +41,9 @@ export class EditorLevel extends Level {
     super.update(time, delta, args);
 
     // Update test shader uniforms
-    const pass: any = this.postprocess.getPass("test");
+    // const pass: any = this.postprocess.getPass("test");
     // pass.uniforms.time.value += delta;
-    pass.uniforms.resolution.value.set(this.gameScene.game.canvas.width, this.gameScene.game.canvas.height);
+    // pass.uniforms.resolution.value.set(this.gameScene.game.canvas.width, this.gameScene.game.canvas.height);
   }
 
   dispose(): void {
