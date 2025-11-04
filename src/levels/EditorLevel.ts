@@ -23,7 +23,7 @@ export class EditorLevel extends Level {
     });
     this.postprocess.addFXAA("fxaa");
     this.postprocess.addOutput("output");
-    // this.postprocess.addShaderPass("test", TestShader);
+    // this.postprocess.addShaderPass("test", GlitchyEmbossShader);
 
     // Create and add generic 3D objects
     const gridHelper = new THREE.GridHelper(10, 10);
