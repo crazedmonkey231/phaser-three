@@ -40,7 +40,6 @@ export class TemplateLevel extends Level {
 
   update(time: number, dt: number, args: any) {
     super.update(time, dt, args);
-    this.widgets.get("fpsText")?.setText(`FPS: ${this.gameScene.game.loop.actualFps} `);
     // Additional update logic here
   }
 
