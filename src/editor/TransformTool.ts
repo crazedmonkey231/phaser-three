@@ -397,9 +397,9 @@ export class TransformTool implements IService {
       x: 220,
       y: 50,
       width: 100,
-      min: 0.1,
-      max: 10,
-      step: 0.1,
+      min: 0.05,
+      max: 1,
+      step: 0.05,
       onChange: (value: number) => {
         this.setSnap(value, undefined, undefined);
       },
