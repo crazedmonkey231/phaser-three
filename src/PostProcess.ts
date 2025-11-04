@@ -32,6 +32,8 @@ export interface Shader {
   uniforms: { [uniform: string]: IUniform<any> };
   vertexShader: string;
   fragmentShader: string;
+  transparent?: boolean;
+  depthWrite?: boolean;
 }
 
 /** Data structure for a postprocessing pass */
