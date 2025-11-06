@@ -1,7 +1,7 @@
-# Phaser Three Starter Project
-### code named **Orbitwork**
+# Orbitworks
+# A Phaser Three Starter Project
 
-A simple starter project that combines the power of **Three.js** for 3D graphics with **Phaser** for 2D game objects, creating a hybrid 2D/3D game development environment.
+Orbitworks is a simple starter project that combines the power of **Three.js** for 3D graphics with **Phaser** for 2D game objects, creating a hybrid 2D/3D game development environment.
 
 ## Features
 
