@@ -32,7 +32,7 @@ export class EditorLevel extends Level {
     this.add(axisHelper);
 
     // Load level from JSON
-    Level.importJsonFile(this, "level.json");
+    Level.importJsonFile(this, "level");
   }
 
   update(time: number, delta: number, args: any) {

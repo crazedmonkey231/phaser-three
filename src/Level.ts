@@ -244,12 +244,9 @@ export class Level extends THREE.Scene implements IService {
   }
 
   /** Loads a level from a JSON file in the levels directory. */
-  static async importJsonFile(level: Level, path: string): Promise<void> {
-    const levelDir = 'levels/';
-    if (!path.startsWith(levelDir)) {
-      path = levelDir + path;
-    }
-    const response = await fetch(path);
+  static async importJsonFile(level: Level, file: string): Promise<void> {
+    const filePath = `levels/${file}.json`;
+    const response = await fetch(filePath);
     const json = await response.json();
     const jsonObj = typeof json === 'string' ? JSON.parse(json) : json;
     return this.importJson(level, jsonObj);

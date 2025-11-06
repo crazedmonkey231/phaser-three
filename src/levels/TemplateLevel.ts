@@ -31,7 +31,7 @@ export class TemplateLevel extends Level {
     this.add(axisHelper);
 
     // Load level from JSON or other Things here
-    Level.importJsonFile(this, "level.json");
+    Level.importJsonFile(this, "level");
 
     // Set up collisions here or when you load Things
 
