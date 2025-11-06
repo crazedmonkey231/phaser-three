@@ -1,12 +1,19 @@
 import * as THREE from "three";
 import { Shader } from "../PostProcess";
 
-/** Hexagonal dithering Scene shader */
+/**
+ * Screen-space hexagonal grid shader that overlays crisp hex outlines
+ * while keeping the underlying scene visible.
+ */
 export const HexDitheringShader: Shader = {
   uniforms: {
     tDiffuse: { value: null },
-    resolution: { value: new THREE.Vector2() },
-    time: { value: 0.0 }
+    resolution: { value: new THREE.Vector2(1, 1) },
+    hexScale: { value: 4.0 },          // hex radius in pixels
+    outlineWidth: { value: 1.25 },       // outline width in pixels
+    edgeSoftness: { value: 0.5 },       // soft falloff for outlines
+    tintStrength: { value: 0.01 },      // how much to blend in the paper tint
+    paperTint: { value: new THREE.Vector3(0.58, 0.57, 0.54) },
   },
   vertexShader: `
     varying vec2 vUv;
@@ -18,53 +25,76 @@ export const HexDitheringShader: Shader = {
   fragmentShader: `
     uniform sampler2D tDiffuse;
     uniform vec2 resolution;
-    uniform float time;
+    uniform float hexScale;
+    uniform float outlineWidth;
+    uniform float edgeSoftness;
+    uniform float tintStrength;
+    uniform vec3 paperTint;
     varying vec2 vUv;
 
-    float hash12(vec2 p)
-    {
-      vec3 p3  = fract(vec3(p.xyx) * .1031);
-      p3 += dot(p3, p3.yzx + 33.33);
-      return fract((p3.x + p3.y) * p3.z);
+    const float SQRT3 = 1.73205080757;
+
+    vec2 pixelToAxial(vec2 p, float size) {
+      float q = (0.57735026919 * p.x - 0.33333333333 * p.y) / size;
+      float r = (0.66666666666 * p.y) / size;
+      return vec2(q, r);
     }
 
-    vec4 hexagon(vec2 p)
-    {
-      vec2 q = vec2(p.x * 2.0 * 0.5773503, p.y + p.x * 0.5773503);
-      
-      vec2 pi = floor(q);
-      vec2 pf = fract(q);
-
-      float v = mod(pi.x + pi.y, 3.0);
-      float ca = step(1.0, v);
-      float cb = step(2.0, v);
-      vec2 ma = step(pf.xy, pf.yx);
-
-      float e = dot(ma, 1.0 - pf.yx + ca * (pf.x + pf.y - 1.0) + cb * (pf.yx - 2.0 * pf.xy));
-
-      vec2 cell = pi + ca - cb * ma;
-      vec2 center;
-      center.x = cell.x / 1.15470053838;
-      center.y = cell.y - center.x * 0.5773503;
-      float f = length((p - center) * vec2(1.0, 0.85));
-
-      return vec4(center, e, f);
+    vec3 axialToCube(vec2 axial) {
+      float x = axial.x;
+      float z = axial.y;
+      float y = -x - z;
+      return vec3(x, y, z);
     }
 
-    float map(vec2 p) {
-      vec4 hex = hexagon(150.0 * p) / 150.0;
-      vec4 tex = texture(tDiffuse, hex.xy + 0.5);
-      return -hex.z + 0.02 * (1.0 - (tex.x + tex.y + tex.z) / 3.0);
+    vec3 cubeRound(vec3 cube) {
+      vec3 rc = floor(cube + 0.5);
+      vec3 diff = abs(rc - cube);
+      if (diff.x > diff.y && diff.x > diff.z) {
+        rc.x = -rc.y - rc.z;
+      } else if (diff.y > diff.z) {
+        rc.y = -rc.x - rc.z;
+      } else {
+        rc.z = -rc.x - rc.y;
+      }
+      return rc;
+    }
+
+    vec2 axialToPixel(vec2 axial, float size) {
+      float x = size * (SQRT3 * axial.x + 0.5 * SQRT3 * axial.y);
+      float y = size * (1.5 * axial.y);
+      return vec2(x, y);
+    }
+
+    float sdHexagon(vec2 p, float radius) {
+      p = abs(p);
+      return max((p.x * 0.86602540378 + p.y * 0.5), p.y) - radius;
     }
 
     void main() {
-      vec4 color = texture2D(tDiffuse, vUv);
-      vec2 p = (vUv - 0.5 * resolution) / resolution.y;
-      float d = map(p);
-      vec3 col;
-      float t = 1.0 - smoothstep(0.0, 2.0 / resolution.y, d);
-      col = t * vec3(1.0, 1.0, 1.0) + (1.0 - t) * vec3(0.0, 0.0, 0.1);
-      gl_FragColor = vec4(col, 1.0);
+      vec2 res = max(resolution, vec2(1.0));
+      float size = max(hexScale, 1.0);
+
+      vec2 pixelPos = vUv * res;
+      vec2 axial = pixelToAxial(pixelPos, size);
+      vec3 cube = axialToCube(axial);
+      vec3 rounded = cubeRound(cube);
+      vec2 roundedAxial = vec2(rounded.x, rounded.z);
+      vec2 center = axialToPixel(roundedAxial, size);
+
+      vec2 local = pixelPos - center;
+      float dist = sdHexagon(local, size);
+
+      vec3 sceneColor = texture2D(tDiffuse, vUv).rgb;
+
+      float edge = 1.0 - smoothstep(outlineWidth, outlineWidth + edgeSoftness, abs(dist));
+      vec3 outlineColor = vec3(0.08);
+
+      float cellNoise = fract(sin(dot(roundedAxial, vec2(12.9898, 78.233))) * 43758.5453);
+      vec3 tintedScene = mix(sceneColor, paperTint - cellNoise * 0.05, tintStrength);
+
+      vec3 finalColor = mix(tintedScene, outlineColor, edge);
+      gl_FragColor = vec4(finalColor, 1.0);
     }
-  `
+  `,
 };
