@@ -204,14 +204,14 @@ export class Level extends THREE.Scene implements IService {
   }
 
   /** Exports the level to a JSON file and triggers a download in the browser. */
-  exportJson(): any {
+  exportJson(fileName: string = 'level'): any {
     // save to file
     const jsonString = this.getJsonString();
     const blob = new Blob([jsonString], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'level.json';
+    a.download = fileName + '.json';
     a.click();
     URL.revokeObjectURL(url);
   }
