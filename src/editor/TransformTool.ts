@@ -136,7 +136,7 @@ export class TransformTool implements IService {
       this.setMode("rotate");
     } else if (event.key === "4") {
       this.setMode("scale");
-    } else if (event.key === "5") {
+    } else if (event.key === "5" || event.key === "Delete") {
       this.deleteSelectedThing();
     } else if (event.key === "9") {
       this.reload();

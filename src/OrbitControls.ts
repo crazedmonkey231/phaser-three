@@ -33,4 +33,11 @@ export class OrbitControls implements IService {
     this.controls?.dispose();
     this.controls = undefined;
   }
+
+  toJsonObject(): any {
+    // Serialize the orbit controls state to a JSON object
+    return {
+      enabled: this.controls?.enabled
+    };
+  }
 }

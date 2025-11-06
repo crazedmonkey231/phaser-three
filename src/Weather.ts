@@ -146,7 +146,8 @@ export class Weather implements IService {
     this.level = null as any;
   }
 
-  getJsonObject(): any {
+  /** Exports the weather state to a JSON object. */
+  toJsonObject(): any {
     return {
       timeOfDay: this.timeofDay,
       enabled: this.enabled,

@@ -150,7 +150,10 @@ export class Level extends THREE.Scene implements IService {
     });
   }
   
-  // Create and return a TransformTool
+  /** Create and return a TransformTool
+   * 
+   * @param params Optional parameters for the TransformTool.
+   */
   getTransformTool(params: any = {}) {
     if (!this.transformTool) {
       this.getOrbitControls();
@@ -159,7 +162,7 @@ export class Level extends THREE.Scene implements IService {
     return this.transformTool;
   }
 
-  // Create and return OrbitControls
+  /** Create and return OrbitControls */
   getOrbitControls() {
     if (this.orbitControls === null) {
       this.orbitControls = new OrbitControls(this.camera, this.gameScene.game.canvas);
@@ -188,10 +191,10 @@ export class Level extends THREE.Scene implements IService {
   }
 
   /** Exports the level to a JSON string. */
-  getJsonString(): string {
+  toJsonObject(): string {
     return JSON.stringify({
       paused: this.paused,
-      weather: this.weather.getJsonObject(),
+      weather: this.weather.toJsonObject(),
       camera: {
         transform: {
           position: this.camera.position,
@@ -203,10 +206,13 @@ export class Level extends THREE.Scene implements IService {
     });
   }
 
-  /** Exports the level to a JSON file and triggers a download in the browser. */
+  /** Exports the level to a JSON file and triggers a download in the browser.
+   * 
+   * @param fileName The name of the file to save (without extension).
+   */
   exportJson(fileName: string = 'level'): any {
     // save to file
-    const jsonString = this.getJsonString();
+    const jsonString = this.toJsonObject();
     const blob = new Blob([jsonString], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -216,7 +222,11 @@ export class Level extends THREE.Scene implements IService {
     URL.revokeObjectURL(url);
   }
 
-  /** Loads a level from a JSON object. */
+  /** Loads a level from a JSON object. 
+   * 
+   * @param level The level instance to load into.
+   * @param json The JSON object representing the level.
+  */
   static importJson(level: Level, json: any): void {
     if (json.paused !== undefined) {
       level.setPaused(json.paused);
@@ -243,7 +253,11 @@ export class Level extends THREE.Scene implements IService {
     }
   }
 
-  /** Loads a level from a JSON file in the levels directory. */
+  /** Loads a level from a JSON file in the levels directory. 
+   * 
+   * @param level The level instance to load into.
+   * @param file The name of the JSON file (without extension) in the levels directory.
+   */
   static async importJsonFile(level: Level, file: string): Promise<void> {
     const filePath = `levels/${file}.json`;
     const response = await fetch(filePath);

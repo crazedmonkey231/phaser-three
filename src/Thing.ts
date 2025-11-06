@@ -128,6 +128,7 @@ export class Thing implements IThing {
     }
   }
 
+  /** Exports the thing to a JSON object. */
   toJsonObject(): any {
     return {
       classType: this.constructor.name,
@@ -148,6 +149,11 @@ export class Thing implements IThing {
     };
   }
 
+  /** Creates an instance of a Thing from a JSON object. 
+   * 
+   * @param level The level instance to load into.
+   * @param json The JSON object representing the thing.
+  */
   static fromJsonObject(level: Level, json: any): IThing {
     const classType = (globalThis as any)[json.classType];
     const thing: IThing = new classType(level, json.name);
@@ -170,10 +176,12 @@ export class Thing implements IThing {
     return thing;
   }
 
+  /** Exports the thing to a JSON string. */
   static exportJson(thing: IThing): string {
     return JSON.stringify(thing.toJsonObject()); 
   }
 
+  /** Creates a copy of the given thing. */
   static copy(thing: IThing): IThing {
     const jsonString = Thing.exportJson(thing);
     return Thing.fromJsonObject(thing.level, JSON.parse(jsonString));

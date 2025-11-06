@@ -9,6 +9,7 @@ export interface IService {
   name: string;
   update(time: number, delta: number, args: any): void;
   dispose(): void;
+  toJsonObject?(): any;
 }
 
 /** Transform interface */

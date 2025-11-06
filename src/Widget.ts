@@ -128,4 +128,11 @@ export class Widget<TGameObject extends Phaser.GameObjects.GameObject, TProps ex
       this.level = null as any;
     }
   }
+
+  toJsonObject(): any {
+    return {
+      name: this.name,
+      props: this.props
+    };
+  }
 }
