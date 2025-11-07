@@ -57,6 +57,9 @@ export class ObjectTray extends Widget<Phaser.GameObjects.Container, IObjectTray
           const newThing = new item.class(this.level, item.name, item.type);
           newThing.group.position.set(0, 0, 0); // Set initial position
           this.level.addThing(newThing);
+          setTimeout(() => {
+            this.level.getTransformTool().setSelected(newThing);
+          }, 0);
           button.setTintFill(0xffffff);
           this.level.gameScene.tweens.add({
             targets: button,
