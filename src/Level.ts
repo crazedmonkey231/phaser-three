@@ -9,6 +9,7 @@ import { TransformTool } from "./editor/TransformTool";
 import { OrbitControls } from "./OrbitControls";
 import { Thing } from "./Thing";
 import { IService, IThing, WidgetType } from "./Types";
+import { Defs } from "./Defs";
 
 // set up three.js renderer in a canvas behind Phaser's canvas
 const app: any = document.getElementById("app");
@@ -50,6 +51,7 @@ export class Level extends THREE.Scene implements IService {
   widgets: Map<string, WidgetType> = new Map();
   audioMgr: AudioManager;
   octree: Octree | null = null;
+  defs: Record<string, any> = Defs;
   private orbitControls: OrbitControls | null = null;
   private transformTool: TransformTool | null = null;
   private resizeObserver: ResizeObserver;

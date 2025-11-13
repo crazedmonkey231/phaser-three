@@ -1,7 +1,6 @@
 import * as THREE from "three";
 import { Level } from "../Level";
 import { Thing } from "../Thing";
-import { IThing } from "../Types";
 
 // A class to manage snow particles in the game level
 export class ParticleSnow extends Thing {

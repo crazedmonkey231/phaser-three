@@ -14,9 +14,9 @@ import { ColliderShape, GameplayTag, IDamage, IThing } from "./Types";
  * 
  * The Thing group userData is set to reference the Thing instance for easy access during collision detection and interaction.
  * 
- * Be sure to expose your Thing subclass globally for deserialization (saving/loading) by adding it to globalThis.
+ * Be sure to expose your Thing subclass globally for deserialization (saving/loading) by adding it to the Defs config.
  */
-export class Thing implements IThing {
+export abstract class Thing implements IThing {
   level: Level = null as any;
   name: string;
   type: string;
@@ -155,9 +155,8 @@ export class Thing implements IThing {
    * @param json The JSON object representing the thing.
   */
   static fromJsonObject(level: Level, json: any): IThing {
-    const classType = (globalThis as any)[json.classType];
-    const thing: IThing = new classType(level, json.name);
-    thing.type = json.type;
+    const classType = level.defs[json.classType];
+    const thing: IThing = new classType(level, json.name, json.type);
     thing.alive = json.alive;
     thing.timeAlive = json.timeAlive;
     thing.tags = new Set(json.tags);
@@ -187,6 +186,3 @@ export class Thing implements IThing {
     return Thing.fromJsonObject(thing.level, JSON.parse(jsonString));
   }
 }
-
-// expose class globally for deserialization
-(globalThis as any)[Thing.name] = Thing;

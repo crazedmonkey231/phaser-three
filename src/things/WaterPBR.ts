@@ -558,6 +558,3 @@ export class WaterPBR extends Thing {
     super.dispose();
   }
 }
-
-// Expose globally
-(globalThis as any)[WaterPBR.name] = WaterPBR;

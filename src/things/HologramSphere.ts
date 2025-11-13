@@ -38,6 +38,3 @@ export class HologramSphere extends Thing {
     super.dispose();
   }
 }
-
-// expose class globally for deserialization
-(globalThis as any)[HologramSphere.name] = HologramSphere;

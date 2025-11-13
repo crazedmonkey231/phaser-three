@@ -26,6 +26,3 @@ export class BasicBoxThing extends Thing {
 
   update(time: number, dt: number): void { }
 }
-
-// expose class globally for deserialization
-(globalThis as any)[BasicBoxThing.name] = BasicBoxThing;
