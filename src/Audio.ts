@@ -130,15 +130,15 @@ export function playTrack(trackName: keyof typeof sounds) {
   return track.play()
 }
 
-/** Play sound at position */
-export function playTrackAtPosition(trackName: keyof typeof sounds, position: THREE.Vector3) {
-  const track = sounds[trackName]
+function playTrack3D(track: Howl, position: THREE.Vector3, pitchShift: boolean = true) {
   if (!track) return
   const usingWebAudio = (Howler as any).usingWebAudio as boolean
 
   if (typeof track.pos === "function" && usingWebAudio) {
     // slight pitch variation
-    track.rate(0.9 + Math.random() * 0.3)
+    if (pitchShift) {
+      track.rate(0.9 + Math.random() * 0.3)
+    }
     // play sound at position
     const id = track.play()
     if (typeof id === "number") {
@@ -163,10 +163,27 @@ export function playTrackAtPosition(trackName: keyof typeof sounds, position: TH
   return track.play()
 }
 
+/** Play sound at position */
+export function playTrackAtPosition(trackName: keyof typeof sounds, position: THREE.Vector3) {
+  const track = sounds[trackName]
+  return playTrack3D(track, position)
+}
+
+export function playMusicAtPosition(trackName: keyof typeof music, position: THREE.Vector3) {
+  const track = music[trackName]
+  return playTrack3D(track, position, false)
+}
+
 /** play sound at object's world position */
 export function playTrackAtObject(trackName: keyof typeof sounds, object: THREE.Object3D) {
   object.getWorldPosition(tmpObjectPos)
   return playTrackAtPosition(trackName, tmpObjectPos)
+}
+
+/** play music at object's world position */
+export function playMusicAtObject(trackName: keyof typeof music, object: THREE.Object3D) {
+  object.getWorldPosition(tmpObjectPos)
+  return playMusicAtPosition(trackName, tmpObjectPos)
 }
 
 // all sounds
