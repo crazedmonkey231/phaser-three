@@ -128,7 +128,7 @@ export class TransformTool implements IService {
     if (!this.level) return;
     if (event.key === "1") {
       if (this.selected) {
-        this.level.addThing(Thing.copy(this.selected));
+       Thing.copy(this.selected);
       }
     } else if (event.key === "2") {
       this.setMode("translate");
@@ -280,7 +280,7 @@ export class TransformTool implements IService {
       },
       onClick: (widget: WidgetType) => {
         if (this.selected) {
-          this.level.addThing(Thing.copy(this.selected));
+          Thing.copy(this.selected);
         }
       },
       onOut: (widget: WidgetType) => {

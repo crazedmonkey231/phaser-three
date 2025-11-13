@@ -71,6 +71,7 @@ export class Level extends THREE.Scene implements IService {
 
     this.resizeObserver = new ResizeObserver(() => {
       resizeThree(this.camera)
+      this.resizeWidgets?.();
     });
     this.resizeObserver.observe(app);
     resizeThree(this.camera);
@@ -96,6 +97,12 @@ export class Level extends THREE.Scene implements IService {
     this.collisionMgr.update(time, dt, args);
     for (const widget of this.widgets.values()) {
       widget.update(time, dt, args);
+    }
+  }
+
+  resizeWidgets(): void {
+    for (const widget of this.widgets.values()) {
+      widget.resize?.();
     }
   }
 
@@ -249,8 +256,7 @@ export class Level extends THREE.Scene implements IService {
     }
     if (json.things) {
       for (const thingJson of json.things) {
-        const thing = Thing.fromJsonObject(level, thingJson);
-        level.addThing(thing);
+        Thing.fromJsonObject(level, thingJson);
       }
     }
   }

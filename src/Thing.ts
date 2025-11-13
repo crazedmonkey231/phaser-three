@@ -164,7 +164,6 @@ export abstract class Thing implements IThing {
     thing.speed = json.speed;
     thing.health = json.health;
     thing.data = json.data;
-    thing.create();
     const transform = json.transform;
     const { x, y, z } = transform.position;
     const { _x: rx, _y: ry, _z: rz, _order: rorder } = transform.rotation;

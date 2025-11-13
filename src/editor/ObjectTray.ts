@@ -1,6 +1,6 @@
 import { GameScene } from "../GameScene";
 import { Level } from "../Level";
-import { IWidgetProps } from "../Types";
+import { IThing, IWidgetProps } from "../Types";
 import { Widget } from "../Widget";
 import { Thing } from "../Thing"; 
 
@@ -8,7 +8,7 @@ export interface IObjectTrayItem {
   name: string;
   type: string;
   icon: string;
-  class: typeof Thing;
+  class: new (level: Level, name: string, type: string) => IThing;
 }
 
 export interface IObjectTrayProps extends IWidgetProps {
@@ -54,9 +54,8 @@ export class ObjectTray extends Widget<Phaser.GameObjects.Container, IObjectTray
         });
         button.on('pointerdown', () => {
           // Logic to add the item to the level goes here
-          const newThing = new item.class(this.level, item.name, item.type);
+          const newThing: IThing = new item.class(this.level, item.name, item.type);
           newThing.group.position.set(0, 0, 0); // Set initial position
-          this.level.addThing(newThing);
           setTimeout(() => {
             this.level.getTransformTool().setSelected(newThing);
           }, 0);

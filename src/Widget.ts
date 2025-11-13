@@ -28,6 +28,7 @@ export class Widget<TGameObject extends Phaser.GameObjects.GameObject, TProps ex
 
   create(scene: GameScene): void { }
   update(timer: number, delta: number, args: any) { }
+  resize?(): void;
 
   setupInput() {
     if (!this.gameObject) return;

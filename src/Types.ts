@@ -126,6 +126,7 @@ export interface IWidget<TGameObject extends Phaser.GameObjects.GameObject = Pha
   props: TProps | undefined;
   level: Level;
   create(scene: GameScene): void;
+  resize?(): void;
   getGameObject(): Phaser.GameObjects.GameObject | undefined;
   getValue(): any;
   setValue(value: any): void;
