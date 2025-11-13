@@ -12,6 +12,7 @@ import { BasicBoxThing } from "../things/BasicBoxThing";
 import { SliderWidget } from "../widgets/SliderWidget";
 import { FpsWidget } from "../widgets/FpsWidget";
 import { HologramSphere } from "../things/HologramSphere";
+import { TextThing } from "../things/TextThing";
 
 /** 
  * This is traditionally called a Level Editor.
@@ -528,13 +529,22 @@ export class TransformTool implements IService {
           name: "Cube",
           type: "cube",
           icon: "cube-icon",
-          class: BasicBoxThing
+          class: BasicBoxThing,
+          params: []
         },
         {
           name: "Hologram Sphere",
           type: "hologramSphere",
           icon: "cube-icon",
-          class: HologramSphere
+          class: HologramSphere,
+          params: []
+        },
+        {
+          name: "Text Thing",
+          type: "textThing",
+          icon: "text-icon",
+          class: TextThing,
+          params: ["This is a text thing!"]
         }
       ]
     });

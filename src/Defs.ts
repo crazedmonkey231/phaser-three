@@ -2,6 +2,7 @@ import { BasicBoxThing } from "./things/BasicBoxThing";
 import { WaterPlane } from "./things/WaterPlane";
 import { WaterPBR } from "./things/WaterPBR";
 import { HologramSphere } from "./things/HologramSphere";
+import { TextThing } from "./things/TextThing";
 
 /** 
  * A registry of all the things that can be created in the game, used for deserialization and dynamic creation of things by name.
@@ -14,4 +15,5 @@ export const Defs: Record<string, any> = {
   "WaterPlane": WaterPlane,
   "WaterPBR": WaterPBR,
   "HologramSphere": HologramSphere,
+  "TextThing": TextThing,
 }
