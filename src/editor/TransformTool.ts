@@ -542,7 +542,7 @@ export class TransformTool implements IService {
         {
           name: "Text Thing",
           type: "textThing",
-          icon: "text-icon",
+          icon: "cube-icon",
           class: TextThing,
           params: ["This is a text thing!"]
         }
