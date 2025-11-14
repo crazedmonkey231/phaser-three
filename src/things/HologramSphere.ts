@@ -6,7 +6,6 @@ import { HologramShader } from "../shaders/HologramShader";
 
 /** Example subclass of Thing using a sphere mesh */
 export class HologramSphere extends Thing {
-  onGround: boolean = false;
   private material: THREE.ShaderMaterial | null = null;
   constructor(level: Level, name: string = "hologramSphere") {
     super(level, name, 'HologramSphere');

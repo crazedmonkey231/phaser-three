@@ -1,7 +1,9 @@
 import * as THREE from 'three';
 import { Octree } from 'three/examples/jsm/math/Octree.js';
 
-// Chunked Octree for spatial partitioning of chunks.
+/** 
+ * Chunked Octree for spatial partitioning of chunks.
+ */
 export class ChunkedOctree extends Octree {
   private readonly chunkTrees: Map<string, Octree> = new Map();
   constructor() {

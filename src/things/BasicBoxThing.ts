@@ -5,7 +5,6 @@ import { Thing } from "../Thing";
 
 /** Example subclass of Thing using a cube mesh */
 export class BasicBoxThing extends Thing {
-  onGround: boolean = false;
   constructor(level: Level, name: string = "boxThing") {
     super(level, name, 'BasicBox');
   }
