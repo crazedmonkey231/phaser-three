@@ -443,7 +443,7 @@ export class Editor implements IService {
           this.hoveredWidget = null;
         },
         onClick: () => {
-          this.setTransformToolEnabled(false);
+          this.disableTransformTool();
         },
         onClickEnd: () => {
           this.setTransformToolEnabled(this.enabled);
@@ -531,7 +531,7 @@ export class Editor implements IService {
     if (this.toolTipText && this.toolTipText.gameObject) {
       const textWidth = this.toolTipText.gameObject.width;
       const textHeight = this.toolTipText.gameObject.height;
-      this.toolTipText.gameObject.setPosition(mousePos.x - textWidth / 2, mousePos.y - textHeight - 5);
+      this.toolTipText.gameObject.setPosition(mousePos.x + 15, mousePos.y + textHeight);
       this.toolTipText.gameObject.setDepth(1000);
     }
   }
