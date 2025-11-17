@@ -1,15 +1,15 @@
 import { GameScene } from "../GameScene";
 import { Level } from "../Level";
-import { IThing, IWidgetProps } from "../Types";
+import { IWidgetProps } from "../Types";
 import { Widget } from "../Widget";
-import { Thing } from "../Thing"; 
+import { IThing } from "../Types";
 
 export interface IObjectTrayItem {
   name: string;
   type: string;
   icon: string;
-  class: any;
-  params: any[];
+  class: new (...args: any[]) => IThing;
+  params: any;
 }
 
 export interface IObjectTrayProps extends IWidgetProps {
@@ -32,7 +32,7 @@ export class ObjectTray extends Widget<Phaser.GameObjects.Container, IObjectTray
     super.create(scene);
     const width = this.level.gameScene.game.canvas.width as number;
     const height = this.level.gameScene.game.canvas.height as number;
-    const containerHeight = 100;
+    const containerHeight = 150;
     this.props.x = 0;
     this.props.y = height - containerHeight;
     this.gameObject = scene.add.container(this.props.x, this.props.y).setScrollFactor(0);
@@ -42,23 +42,29 @@ export class ObjectTray extends Widget<Phaser.GameObjects.Container, IObjectTray
     if (this.props.items) {
       const buttonSize = 64;
       this.props.items.forEach((item, index) => {
-        const x = 50 + index * (buttonSize + 10);
-        const y = containerHeight / 2;
+        // Calculate button position in a grid layout
+        const itemsPerRow = Math.floor(width / (buttonSize + 5));
+        const x = 50 + (index % itemsPerRow) * (buttonSize + 5);
+        const y = containerHeight / 2 + Math.floor(index / itemsPerRow) * (buttonSize + 5) - buttonSize / 2;
+
         const button = scene.add.image(x, y, item.icon).setOrigin(0, 0.5).setInteractive();
         button.setOrigin(0.5, 0.5);
         button.setDisplaySize(buttonSize, buttonSize);
         button.on('pointerover', () => {
           button.setScale(1.25);
+          this.level.getEditor().setToolTipText(item.name);
         });
         button.on('pointerout', () => {
           button.setScale(1);
+          this.level.getEditor().clearToolTipText();
         });
         button.on('pointerdown', () => {
           // Logic to add the item to the level goes here
-          const newThing: IThing = new item.class(this.level, item.name, item.type, ...item.params);
+          const newThing = new item.class(this.level, item.name, item.type, ...item.params);
           newThing.group.position.set(0, 0, 0); // Set initial position
+          this.level.addThing(newThing);
           setTimeout(() => {
-            this.level.getTransformTool().setSelected(newThing);
+            this.level.getEditor().setSelected(newThing);
           }, 0);
           button.setTintFill(0xffffff);
           this.level.gameScene.tweens.add({

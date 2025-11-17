@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { GameScene } from "../GameScene";
 import { Level } from "../Level";
+import { createSlider } from "../WidgetUtils";
 
 /** A level class for the level editor */
 export class EditorLevel extends Level {
@@ -12,7 +13,7 @@ export class EditorLevel extends Level {
     super.create();
 
     // Set up level editor tools
-    this.getTransformTool();
+    this.getEditor();
 
     // Set up post-processing effects
     this.postprocess.addRender("render");
@@ -22,6 +23,7 @@ export class EditorLevel extends Level {
       pulsePeriod: 1,
     });
     this.postprocess.addFXAA("fxaa");
+    this.postprocess.addBloom("bloom", 0.01, 0.01, 8.0);
     this.postprocess.addOutput("output");
     // this.postprocess.addShaderPass("test", HexDitheringShader);
 
@@ -33,6 +35,7 @@ export class EditorLevel extends Level {
 
     // Load level from JSON
     Level.importJsonFile(this, "level");
+
   }
 
   update(time: number, delta: number, args: any) {

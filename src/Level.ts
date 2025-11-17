@@ -5,7 +5,7 @@ import { Weather } from "./Weather";
 import { CollisionManager } from "./Collision";
 import { AudioManager } from "./Audio";
 import { Octree } from 'three/examples/jsm/math/Octree.js';
-import { TransformTool } from "./editor/TransformTool";
+import { Editor } from "./editor/Editor";
 import { OrbitControls } from "./OrbitControls";
 import { Thing } from "./Thing";
 import { IService, IThing, WidgetType } from "./Types";
@@ -53,7 +53,7 @@ export class Level extends THREE.Scene implements IService {
   octree: Octree | null = null;
   defs: Record<string, any> = Defs;
   private orbitControls: OrbitControls | null = null;
-  private transformTool: TransformTool | null = null;
+  private editor: Editor | null = null;
   private resizeObserver: ResizeObserver;
   private paused: boolean = false;
   constructor(gameScene: GameScene) {
@@ -84,7 +84,7 @@ export class Level extends THREE.Scene implements IService {
   }
 
   update(time: number, dt: number, args: any) {
-    if (this.transformTool) this.transformTool.update(time, dt, args);
+    if (this.editor) this.editor.update(time, dt, args);
     if (this.orbitControls) this.orbitControls.update(time, dt, args);
     if (this.paused) return;
     this.postprocess.update(time, dt, args);
@@ -112,9 +112,9 @@ export class Level extends THREE.Scene implements IService {
 
   dispose() {
     this.resizeObserver.disconnect();
-    if (this.transformTool) {
-      this.transformTool.dispose();
-      this.transformTool = null;
+    if (this.editor) {
+      this.editor.dispose();
+      this.editor = null;
     }
     this.things.forEach(thing => thing.dispose());
     this.things.clear();
@@ -159,16 +159,16 @@ export class Level extends THREE.Scene implements IService {
     });
   }
   
-  /** Create and return a TransformTool
+  /** Create and return a Editor
    * 
-   * @param params Optional parameters for the TransformTool.
+   * @param params Optional parameters for the Editor.
    */
-  getTransformTool(params: any = {}) {
-    if (!this.transformTool) {
+  getEditor(params: any = {}) {
+    if (!this.editor) {
       this.getOrbitControls();
-      this.transformTool = new TransformTool(this, params);
+      this.editor = new Editor(this, params);
     }
-    return this.transformTool;
+    return this.editor;
   }
 
   /** Create and return OrbitControls */
@@ -204,6 +204,7 @@ export class Level extends THREE.Scene implements IService {
     return JSON.stringify({
       paused: this.paused,
       weather: this.weather.toJsonObject(),
+      editor: this.editor ? this.editor.toJsonObject() : null,
       camera: {
         transform: {
           position: this.camera.position,
@@ -244,6 +245,9 @@ export class Level extends THREE.Scene implements IService {
       const weatherJson = json.weather;
       level.weather.setTimeOfDay(weatherJson.timeOfDay);
       level.weather.setEnabled(weatherJson.enabled);
+    }
+    if (json.editor && level.editor) {
+      level.editor.fromJsonObject(json.editor);
     }
     if (json.camera) {
       const transform = json.camera.transform;

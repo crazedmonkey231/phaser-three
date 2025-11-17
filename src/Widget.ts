@@ -118,8 +118,8 @@ export class Widget<TGameObject extends Phaser.GameObjects.GameObject, TProps ex
   }
 
   dispose() {
-    this.level.widgets.delete(this.name);
     if (this.gameObject) {
+      this.level.widgets.delete(this.name);
       this.gameObject.off('pointerdown');
       this.gameObject.off('pointerover');
       this.gameObject.off('pointerout');

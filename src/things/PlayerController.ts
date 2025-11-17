@@ -2,7 +2,6 @@ import * as THREE from 'three';
 import { Capsule, Octree } from 'three/examples/jsm/Addons.js';
 import { Level } from '../Level';
 import { Thing } from '../Thing';
-import { IThing } from '../Types';
 
 
 export class PlayerController extends Thing {

@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { Level } from "../Level";
 import { Thing } from "../Thing";
-import { loadText3D } from "../Utils";
+import { loadText3D } from "../ThingUtils";
 
 /** Example subclass of Thing using a 3d flat text mesh */
 export class TextThing extends Thing {

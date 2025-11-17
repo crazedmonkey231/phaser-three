@@ -13,27 +13,33 @@ import { SliderWidget } from "../widgets/SliderWidget";
 import { FpsWidget } from "../widgets/FpsWidget";
 import { HologramSphere } from "../things/HologramSphere";
 import { TextThing } from "../things/TextThing";
+import { OrbitParticles } from "../things/OrbitParticles";
+import { createTextButton, ITextButton } from '../WidgetUtils';
+
 
 /** 
- * This is traditionally called a Level Editor.
+ * This is a Level Editor.
  * 
  * Initialize this to allow translation, rotation, and scaling of things in the level.
  * 
  * Save the level then load it for your game.
  */
-export class TransformTool implements IService {
-  name: string = "TransformTool";
+export class Editor implements IService {
+  name: string = "Editor";
   private level: Level;
   private scene: GameScene;
   private transformControls: TransformControls | null = null;
   private gizmo: THREE.Object3D | null = null;
+  private enabled: boolean = true;
   private selected: IThing | null = null;
-  private hoveredWidget: WidgetType | null = null;
+  private hoveredWidget: any = null;
   private translationSnap: number = 1;
   private rotationSnap: number = 15;
   private scaleSnap: number = 0.1;
-  private timeOfDay: number = 12;
   private toolTipText: TextWidget | null = null;
+  private headerButtons: ITextButton[] = [];
+  private sliders: SliderWidget[] = [];
+  private objectTray: ObjectTray | null = null;
   constructor(level: Level, params: any = {}) {
     this.level = level;
     this.scene = level.getGameScene();
@@ -76,22 +82,21 @@ export class TransformTool implements IService {
     });
 
     // set initial params
-    if (params.translationSnap || params.rotationSnap || params.scaleSnap) {
-      this.setSnap(
-        params.translationSnap,
-        params.rotationSnap,
-        params.scaleSnap
-      );
-    }
+    this.setSnap(
+      params.translationSnap || this.translationSnap,
+      params.rotationSnap || this.rotationSnap,
+      params.scaleSnap || this.scaleSnap
+    );
 
-    this.createWidgets();
+    this.createHud();
 
     this.scene.game.scale.on("resize", () => {
-      this.createWidgets();
+      this.createHud();
     });
   }
 
   setSelected(thing: IThing | null, multiSelect: boolean = false) {
+    if (!this.enabled) return;
     if (this.transformControls && this.level && thing) {
       this.transformControls.attach(thing.group);
       this.gizmo = this.transformControls.getHelper();
@@ -183,7 +188,7 @@ export class TransformTool implements IService {
     }
   }
 
-  setEnabled(enabled: boolean) {
+  setTransformToolEnabled(enabled: boolean) {
     if (this.transformControls) {
       this.transformControls.enabled = enabled;
     }
@@ -201,6 +206,7 @@ export class TransformTool implements IService {
     if (this.transformControls) {
       this.clearWidgets();
       this.toolTipText = null;
+      this.objectTray = null;
       this.scene.input?.off('pointerdown');
       this.scene.input.keyboard?.off('keydown');
       this.transformControls.detach();
@@ -221,6 +227,15 @@ export class TransformTool implements IService {
     this.level.widgets.forEach((widget) => {
       widget.dispose();
     });
+    this.level.widgets.clear();
+    this.headerButtons.forEach((button) => {
+      button.dispose();
+    });
+    this.headerButtons = [];
+    this.sliders.forEach((slider) => {
+      slider.dispose();
+    });
+    this.sliders = [];
   }
 
   deleteSelectedThing() {
@@ -236,13 +251,20 @@ export class TransformTool implements IService {
     this.level.create();
   }
 
-  private setToolTipText(text: string) {
+  setToolTipText(text: string) {
     if (this.toolTipText) {
       this.toolTipText.setText(text);
     }
   }
 
-  private createButtons(){
+  clearToolTipText() {
+    if (this.toolTipText) {
+      this.toolTipText.setText('');
+    }
+  }
+
+  private createHud(){
+    this.clearWidgets();
     const width = this.scene.game.canvas.width;
     const height = this.scene.game.canvas.height;
 
@@ -257,272 +279,195 @@ export class TransformTool implements IService {
     new FpsWidget(this.level, {
       name: "fpsText",
       text: "",
-      x: 10,
-      y: 10,
+      x: 30,
+      y: 35,
       style: { font: "24px Arial", color: "#ffffff" },
     });
-    
-    new TextWidget(this.level, {
-      name: "transform instructions",
-      text: 'Controls:\n1. Duplicate\n2. Translate\n3. Rotate\n4. Scale\n5. Delete\n9. Reset\n0. Export',
-      x: 10,
-      y: 50,
-      style: { font: '16px Arial', color: '#ffffff' }
-    });
 
-    new ButtonWidget(this.level, {
-      name: "Duplicate",
-      texture: 'duplicate',
-      x: width - 60,
-      y: 50,
-      pixelPerfect: false,
-      onHover: (widget: WidgetType) => {
-        this.hoveredWidget = widget;
-      },
-      onClick: (widget: WidgetType) => {
-        if (this.selected) {
-          Thing.copy(this.selected);
+    const headerButtonNames = ["Toggle", "Weather", "Duplicate", "Translate", "Rotate", "Scale", "Delete", "Reset", "Export"];
+    const headerButtons: ITextButton[] = [];
+    const buttonWidth = 120;
+    const buttonHeight = 30;
+    const buttonStartX = 75;
+    const buttonStartY = 100;
+
+    const getExtraInfo = (btn: string) => {
+      switch (btn) {
+        case "Weather":
+          return this.level.weather.getEnabled() ? ': ON' : ': OFF';
+        case "Toggle":
+          return this.transformControls?.enabled ? ': ON' : ': OFF';
+        default:
+          return '';
+      }
+    };
+
+    headerButtonNames.forEach((btn, index) => {
+      const textButton: ITextButton = createTextButton(this.scene, {
+        label: btn,
+        x: buttonStartX,
+        y: buttonStartY + index * (buttonHeight + 10),
+        width: buttonWidth,
+        height: buttonHeight,
+        hoverStyle: { 
+          fillColor: 0xaaaaaa,
+          scale: 1.1
+        },
+        clickStyle: { 
+          fillColor: 0x333333,
+          scale: 0.85
+        },
+        onHover: () => {
+          this.setToolTipText(btn + getExtraInfo(btn));
+          this.setTransformToolEnabled(false);
+          this.hoveredWidget = btn;
+        },
+        onOut: () => {
+          this.setToolTipText('');
+          this.setTransformToolEnabled(this.enabled);
+          this.hoveredWidget = null;
+        },
+        onClick: () => {
+          switch (btn) {
+            case "Toggle":
+              this.enabled = !this.enabled;
+              this.setTransformToolEnabled(this.enabled);
+              if (!this.enabled) {
+                this.onDeselect();
+              }
+              break;
+            case "Weather":
+              this.level.weather.toggle();
+              break;
+            case "Duplicate":
+              if (this.selected) {
+                Thing.copy(this.selected);
+              }
+              break;
+            case "Translate":
+              this.setMode("translate");
+              break;
+            case "Rotate":
+              this.setMode("rotate");
+              break;
+            case "Scale":
+              this.setMode("scale");
+              break;
+            case "Delete":
+              this.deleteSelectedThing();
+              break;
+            case "Reset":
+              this.reload();
+              break;
+            case "Export":
+              this.level.exportJson();
+              break;
+          }
+          this.setToolTipText(btn + getExtraInfo(btn));
         }
-      },
-      onOut: (widget: WidgetType) => {
-        this.hoveredWidget = null;
-      }
+      });
+      headerButtons.push(textButton);
     });
+    this.headerButtons = headerButtons;
 
-    new ButtonWidget(this.level, {
-      name: "Translate",
-      texture: 'translate',
-      x: width - 60,
-      y: 130,
-      pixelPerfect: false,
-      onHover: (widget: WidgetType) => {
-        this.hoveredWidget = widget;
-      },
-      onClick: (widget: WidgetType) => {
-        this.setMode("translate");
-      },
-      onOut: (widget: WidgetType) => {
-        this.hoveredWidget = null;
+    const sliders: SliderWidget[] = [];
+    const sliderNames = ["Time of Day", "Translation Snap", "Rotation Snap", "Scale Snap"];
+    const sliderWidth = 175;
+    const sliderStartX = buttonStartX + buttonWidth + 20;
+    const sliderStartY = 50;
+
+    sliderNames.forEach((name, index) => {
+      let value = 0;
+      let min = 0;
+      let max = 0;
+      let step = 0;
+      switch (name) {
+        case "Time of Day":
+          value = this.level.weather.getTimeOfDay();
+          min = 0;
+          max = 24;
+          step = 0.1;
+          break;
+        case "Translation Snap":
+          value = this.translationSnap;
+          min = 0.1;
+          max = 10;
+          step = 0.1;
+          break;
+        case "Rotation Snap":
+          value = this.rotationSnap;
+          min = 1;
+          max = 90;
+          step = 1;
+          break;
+        case "Scale Snap":
+          value = this.scaleSnap;
+          min = 0.01;
+          max = 1;
+          step = 0.01;
+          break;
       }
+      const slider = new SliderWidget(this.level, {
+        name: name,
+        label: name + ': ' + value.toFixed(2),
+        x: sliderStartX + index * (sliderWidth + 30),
+        y: sliderStartY,
+        width: sliderWidth,
+        value: value,
+        min: min,
+        max: max,
+        step: step,
+        trackStyle: { fillColor: 0x555555 },
+        thumbStyle: { type: "rectangle", fillColor: 0xaaaaaa },
+        hoverStyle: { fillColor: 0xaaaaaa, scale: 1.1 },
+        clickStyle: { fillColor: 0x333333 },
+        onHover: () => {
+          this.setToolTipText(name);
+          this.setTransformToolEnabled(false);
+          this.hoveredWidget = name;
+        },
+        onOut: () => {
+          this.setToolTipText('');
+          this.setTransformToolEnabled(this.enabled);
+          this.hoveredWidget = null;
+        },
+        onChange: (newValue: number) => {
+          switch (name) {
+            case "Time of Day":
+              this.level.weather.setTimeOfDay(newValue);
+              slider.setText(`Time of Day: ${newValue.toFixed(1)}`);
+              break;
+            case "Translation Snap":
+              this.translationSnap = newValue;
+              slider.setText(`Translation Snap: ${newValue.toFixed(1)}`);
+              this.setSnap(this.translationSnap, this.rotationSnap, this.scaleSnap);
+              break;
+            case "Rotation Snap":
+              this.rotationSnap = newValue;
+              slider.setText(`Rotation Snap: ${newValue.toFixed(1)}`);
+              this.setSnap(this.translationSnap, this.rotationSnap, this.scaleSnap);
+              break;
+            case "Scale Snap":
+              this.scaleSnap = newValue;
+              slider.setText(`Scale Snap: ${newValue.toFixed(2)}`);
+              this.setSnap(this.translationSnap, this.rotationSnap, this.scaleSnap);
+              break;
+          }
+        }
+      });
+      sliders.push(slider);
     });
+    this.sliders = sliders;
 
-    new ButtonWidget(this.level, {
-      name: "Rotate",
-      texture: 'rotate',
-      x: width - 60,
-      y: 200,
-      pixelPerfect: false,
-      onHover: (widget: WidgetType) => {
-        this.hoveredWidget = widget;
-      },
-      onClick: (widget: WidgetType) => {
-        this.setMode("rotate");
-      },
-      onOut: (widget: WidgetType) => {
-        this.hoveredWidget = null;
-      }
-    });
-
-    new ButtonWidget(this.level, {
-      name: "Scale",
-      texture: 'scale',
-      x: width - 60,
-      y: 270,
-      pixelPerfect: false,
-      onHover: (widget: WidgetType) => {
-        this.hoveredWidget = widget;
-      },
-      onClick: (widget: WidgetType) => {
-        this.setMode("scale");
-      },
-      onOut: (widget: WidgetType) => {
-        this.hoveredWidget = null;
-      }
-    });
-
-    new ButtonWidget(this.level, {
-      name: "Delete",
-      texture: 'delete',
-      x: width - 60,
-      y: 340,
-      pixelPerfect: false,
-      onHover: (widget: WidgetType) => {
-        this.hoveredWidget = widget;
-      },
-      onClick: (widget: WidgetType) => {
-        this.deleteSelectedThing();
-      },
-      onOut: (widget: WidgetType) => {
-        this.hoveredWidget = null;
-      }
-    });
-
-    new ButtonWidget(this.level, {
-      name: "Reload",
-      texture: 'reload',
-      x: width - 60,
-      y: 410,
-      pixelPerfect: false,
-      onHover: (widget: WidgetType) => {
-        this.hoveredWidget = widget;
-      },
-      onClick: (widget: WidgetType) => {
-        this.reload();
-      },
-      onOut: (widget: WidgetType) => {
-        this.hoveredWidget = null;
-      }
-    });
-
-    new ButtonWidget(this.level, {
-      name: "Save",
-      texture: 'save',
-      x: width - 60,
-      y: 480,
-      pixelPerfect: false,
-      onHover: (widget: WidgetType) => {
-        this.hoveredWidget = widget;
-      },
-      onClick: (widget: WidgetType) => {
-        this.level.exportJson();
-      },
-      onOut: (widget: WidgetType) => {
-        this.hoveredWidget = null;
-      }
-    });
-
-    new SliderWidget(this.level, {
-      name: "Translation\nSnap",
-      text: `${this.translationSnap}`,
-      initialValue: this.translationSnap,
-      x: 220,
-      y: 50,
-      width: 100,
-      min: 0.05,
-      max: 1,
-      step: 0.05,
-      onChange: (value: number) => {
-        this.setSnap(value, undefined, undefined);
-      },
-      onHover: (widget: WidgetType) => {
-        this.hoveredWidget = widget;
-        this.level.getOrbitControls().setEnabled(false);
-      },
-      onClick: (widget: WidgetType) => {
-      },
-      onOut: (widget: WidgetType) => {
-        this.hoveredWidget = null;
-        this.level.getOrbitControls().setEnabled(true);
-      }
-    });
-
-    new SliderWidget(this.level, {
-      name: "Rotation\nSnap",
-      text: `${this.rotationSnap}`,
-      initialValue: this.rotationSnap,
-      x: 370,
-      y: 50,
-      width: 100,
-      min: 1,
-      max: 180,
-      step: 1,
-      onChange: (value: number) => {
-        this.setSnap(undefined, value, undefined);
-      },
-      onHover: (widget: WidgetType) => {
-        this.hoveredWidget = widget;
-        this.level.getOrbitControls().setEnabled(false);
-      },
-      onClick: (widget: WidgetType) => {
-      },
-      onOut: (widget: WidgetType) => {
-        this.hoveredWidget = null;
-        this.level.getOrbitControls().setEnabled(true);
-      }
-    });
-
-    new SliderWidget(this.level, {
-      name: "Scale\nSnap",
-      text: `${this.scaleSnap}`,
-      initialValue: this.scaleSnap,
-      x: 520,
-      y: 50,
-      width: 100,
-      min: 0.1,
-      max: 10,
-      step: 0.1,
-      onChange: (value: number) => {
-        this.setSnap(undefined, undefined, value);
-      },
-      onHover: (widget: WidgetType) => {
-        this.hoveredWidget = widget;
-        this.level.getOrbitControls().setEnabled(false);
-      },
-      onClick: (widget: WidgetType) => {
-      },
-      onOut: (widget: WidgetType) => {
-        this.hoveredWidget = null;
-        this.level.getOrbitControls().setEnabled(true);
-      }
-    });
-
-    this.setSnap(
-      this.translationSnap,
-      this.rotationSnap,
-      this.scaleSnap
-    );
-
-    new SliderWidget(this.level, {
-      name: "Time of Day",
-      text: `${this.timeOfDay}`,
-      initialValue: this.timeOfDay,
-      x: 670,
-      y: 50,
-      width: 100,
-      min: 0,
-      max: 24,
-      step: 0.1,
-      onChange: (value: number) => {
-        this.timeOfDay = value;
-        this.level.weather.setTimeOfDay(this.timeOfDay);
-      },
-      onHover: (widget: WidgetType) => {
-        this.hoveredWidget = widget;
-        this.level.getOrbitControls().setEnabled(false);
-      },
-      onClick: (widget: WidgetType) => {
-      },
-      onOut: (widget: WidgetType) => {
-        this.hoveredWidget = null;
-        this.level.getOrbitControls().setEnabled(true);
-      }
-    });
-    this.level.weather.setTimeOfDay(this.timeOfDay);
-
-    new ButtonWidget(this.level, {
-      name: "Toggle Weather",
-      x: width - 60,
-      y: 550,
-      pixelPerfect: false,
-      texture: 'toggle_weather',
-      onClick: (widget: WidgetType) => {
-        this.level.weather.toggle();
-      },
-      onHover: (widget: WidgetType) => {
-        this.hoveredWidget = widget;
-        this.level.getOrbitControls().setEnabled(false);
-      },
-      onOut: (widget: WidgetType) => {
-        this.hoveredWidget = null;
-        this.level.getOrbitControls().setEnabled(true);
-      }
-    });
-
+    this.createObjectTray();
   }
 
-  /** Create the object tray for the transform tool, add custom things here. Ensure objects are exposed globally for saving and loading. */
+  /** Create the object tray for the transform tool, add custom things here. Ensure objects are exposed in the Defs. */
   private createObjectTray() {
-    new ObjectTray(this.level, {
+    if (this.objectTray) {
+      this.objectTray.dispose();
+    }
+    this.objectTray = new ObjectTray(this.level, {
       name: "object tray",
       items: [
         {
@@ -545,35 +490,49 @@ export class TransformTool implements IService {
           icon: "cube-icon",
           class: TextThing,
           params: ["This is a text thing!"]
+        },
+        {
+          name: "Orbit Particles",
+          type: "orbitParticles",
+          icon: "cube-icon",
+          class: OrbitParticles,
+          params: []
         }
       ]
     });
   }
 
-  /** Create all widgets for the TransformTool */
-  createWidgets() {
-    this.clearWidgets();
-    this.createButtons();
-    this.createObjectTray();
-  }
-
   /** Update the transform tool, called from level update */
   update(time: number, dt: number, args: any) {
-    const slider: SliderWidget | undefined = this.level.widgets.get("Time of Day") as SliderWidget;
+    const slider = this.sliders.find(s => s.props.name === "Time of Day");
     if (slider) {
       const timeOfDay = this.level.weather.getTimeOfDay();
-      slider.setSliderValue(timeOfDay);
-      slider.setText(`${timeOfDay.toFixed(1)}`);
+      slider.getSlider()?.setValue(timeOfDay);
+      slider.setText(`Time of Day: ${timeOfDay.toFixed(1)}`);
     }
     const mousePos = this.scene.input.activePointer;
-    if (this.hoveredWidget && this.hoveredWidget.props && this.toolTipText && this.toolTipText.gameObject) {
+    if (this.toolTipText && this.toolTipText.gameObject) {
       const textWidth = this.toolTipText.gameObject.width;
       const textHeight = this.toolTipText.gameObject.height;
-      this.toolTipText.gameObject.setPosition(mousePos.x - textWidth, mousePos.y - textHeight + 25);
+      this.toolTipText.gameObject.setPosition(mousePos.x - textWidth / 2, mousePos.y - textHeight - 5);
       this.toolTipText.gameObject.setDepth(1000);
-      this.setToolTipText(this.hoveredWidget.props.name || '');
-    } else {
-      this.setToolTipText('');
     }
+  }
+
+  /** Save the editor state to a JSON object */
+  toJsonObject() {
+    return {
+      enabled: this.enabled,
+      translationSnap: this.translationSnap,
+      rotationSnap: this.rotationSnap,
+      scaleSnap: this.scaleSnap,
+    };
+  }
+
+  /** Load the editor state from a JSON object */
+  fromJsonObject(json: any) {
+    this.enabled = json.enabled;
+    this.setTransformToolEnabled(this.enabled);
+    this.setSnap(json.translationSnap, json.rotationSnap, json.scaleSnap);
   }
 }

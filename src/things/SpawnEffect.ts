@@ -1,7 +1,6 @@
 import * as THREE from "three";
 import { Level } from "../Level";
 import { Thing } from "../Thing";
-import { IThing } from "../Types";
 
 // A cyclindar spawn effect thing
 export class SpawnEffect extends Thing {

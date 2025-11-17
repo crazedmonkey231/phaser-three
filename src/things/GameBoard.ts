@@ -2,7 +2,6 @@ import * as THREE from "three";
 import { Level } from '../Level';
 import { NeonGridShader } from "../shaders/NeonGridShader";
 import { Thing } from "../Thing";
-import { IThing } from "../Types";
 
 export interface IGameBoardProps {
   size?: THREE.Vector2;

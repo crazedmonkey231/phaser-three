@@ -10,6 +10,7 @@ export interface IService {
   update(time: number, delta: number, args: any): void;
   dispose(): void;
   toJsonObject?(): any;
+  fromJsonObject?(json: any): void;
 }
 
 /** Transform interface */
@@ -17,6 +18,13 @@ export interface ITransform {
   position: THREE.Vector3;
   rotation: THREE.Euler;
   scale: THREE.Vector3;
+}
+
+/** XYZ interface */
+export interface XYZ {
+  x: number;
+  y: number;
+  z: number;
 }
 
 /** Inventory item interface */

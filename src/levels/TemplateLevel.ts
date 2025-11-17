@@ -14,7 +14,7 @@ export class TemplateLevel extends Level {
     super.create(); 
 
     // Set up controllers here
-    this.getTransformTool(); // Enable transform tool, remove if not needed
+    this.getEditor(); // Enable transform tool, remove if not needed
 
     // Set up post-processing effects here, Example:
     this.postprocess.addRender("render");
