@@ -17,7 +17,7 @@ export function defaultSplineData(): SplineData {
   return {
     splineType: "catmullrom",
     arcSegments: 64,
-    closed: true,
+    closed: false,
     tension: 0.5,
     controlPoints: [
       { x: 0, y: 0, z: 0 },
