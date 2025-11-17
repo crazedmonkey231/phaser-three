@@ -49,7 +49,9 @@ export interface ISliderParams {
   clickStyle?: IStyle;
   onStart?: (value: number) => void;
   onChange: (value: number) => void;
-  onOut?: (value: number) => void;
+  onHover?: () => void;
+  onOut?: () => void;
+  onEnd?: (value: number) => void;
   onClick?: (value: number) => void;
   onClickEnd?: (value: number) => void;
 }
@@ -81,7 +83,9 @@ export function createSlider(
     clickStyle,
     onStart,
     onChange,
-    onOut: onEnd,
+    onHover,
+    onOut,
+    onEnd,
     onClick,
     onClickEnd,
   } = sliderParams;
@@ -124,10 +128,8 @@ export function createSlider(
     thumb,
     setValue(value: number) {
       const clampedValue = Phaser.Math.Clamp(value, min, max);
-      const steppedValue = min + Math.round((clampedValue - min) / step) * step;
-      const clampedSteppedValue = Phaser.Math.Clamp(steppedValue, min, max);
-      const newX = ((clampedSteppedValue - min) / (max - min)) * width;
-      thumb.x = x + newX;
+      const localX = ((clampedValue - min) / (max - min)) * width;
+      thumb.x = x + localX;
     },
     dispose() {
       track.destroy();
@@ -154,8 +156,12 @@ export function createSlider(
   thumb.on("drag", (pointer: Phaser.Input.Pointer, dragX: number) => {
     const localX = Phaser.Math.Clamp(dragX - x, 0, width);
     const newValue = min + (localX / width) * (max - min);
-    slider.setValue(newValue);
-    onChange(newValue);
+    const clampedValue = Phaser.Math.Clamp(newValue, min, max);
+    const steppedValue = min + Math.round((clampedValue - min) / step) * step;
+    const clampedSteppedValue = Phaser.Math.Clamp(steppedValue, min, max);
+    const newX = ((clampedSteppedValue - min) / (max - min)) * width;
+    thumb.x = x + newX;
+    onChange(steppedValue);
   });
 
   thumb.on("pointerover", () => {
@@ -165,11 +171,17 @@ export function createSlider(
     if (hoverStyle?.scale !== undefined) {
       thumb.setScale(hoverStyle.scale);
     }
+    if (onHover) {
+      onHover();
+    }
   });
 
   thumb.on("pointerout", () => {
     thumb.setFillStyle(thumbColor);
     thumb.setScale(1);
+    if (onOut) {
+      onOut();
+    }
   });
 
   thumb.on("pointerdown", () => {

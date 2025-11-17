@@ -191,7 +191,18 @@ export class Editor implements IService {
   setTransformToolEnabled(enabled: boolean) {
     if (this.transformControls) {
       this.transformControls.enabled = enabled;
+      this.level.getOrbitControls().setEnabled(enabled);
     }
+  }
+
+  disableTransformTool() {
+    this.setTransformToolEnabled(false);
+    this.level.getOrbitControls().setEnabled(false);
+  }
+
+  enableTransformTool() {
+    this.setTransformToolEnabled(true);
+    this.level.getOrbitControls().setEnabled(true);
   }
 
   setSpace(space: "world" | "local") {
@@ -419,11 +430,11 @@ export class Editor implements IService {
         step: step,
         trackStyle: { fillColor: 0x555555 },
         thumbStyle: { type: "rectangle", fillColor: 0xaaaaaa },
-        hoverStyle: { fillColor: 0xaaaaaa, scale: 1.1 },
+        hoverStyle: { fillColor: 0xcccccc, scale: 1.15 },
         clickStyle: { fillColor: 0x333333 },
         onHover: () => {
           this.setToolTipText(name);
-          this.setTransformToolEnabled(false);
+          this.disableTransformTool();
           this.hoveredWidget = name;
         },
         onOut: () => {
@@ -431,20 +442,26 @@ export class Editor implements IService {
           this.setTransformToolEnabled(this.enabled);
           this.hoveredWidget = null;
         },
+        onClick: () => {
+          this.setTransformToolEnabled(false);
+        },
+        onClickEnd: () => {
+          this.setTransformToolEnabled(this.enabled);
+        },
         onChange: (newValue: number) => {
           switch (name) {
             case "Time of Day":
               this.level.weather.setTimeOfDay(newValue);
-              slider.setText(`Time of Day: ${newValue.toFixed(1)}`);
+              slider.setText(`Time of Day: ${newValue.toFixed(2)}`);
               break;
             case "Translation Snap":
               this.translationSnap = newValue;
-              slider.setText(`Translation Snap: ${newValue.toFixed(1)}`);
+              slider.setText(`Translation Snap: ${newValue.toFixed(2)}`);
               this.setSnap(this.translationSnap, this.rotationSnap, this.scaleSnap);
               break;
             case "Rotation Snap":
               this.rotationSnap = newValue;
-              slider.setText(`Rotation Snap: ${newValue.toFixed(1)}`);
+              slider.setText(`Rotation Snap: ${newValue.toFixed(2)}`);
               this.setSnap(this.translationSnap, this.rotationSnap, this.scaleSnap);
               break;
             case "Scale Snap":
@@ -508,7 +525,7 @@ export class Editor implements IService {
     if (slider) {
       const timeOfDay = this.level.weather.getTimeOfDay();
       slider.getSlider()?.setValue(timeOfDay);
-      slider.setText(`Time of Day: ${timeOfDay.toFixed(1)}`);
+      slider.setText(`Time of Day: ${timeOfDay.toFixed(2)}`);
     }
     const mousePos = this.scene.input.activePointer;
     if (this.toolTipText && this.toolTipText.gameObject) {

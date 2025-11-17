@@ -25,6 +25,10 @@ export interface ISliderWidgetProps extends IWidgetProps {
   hoverStyle: IStyle;
   clickStyle: IStyle;
   onChange: (value: number) => void;
+  onHover?: () => void;
+  onOut?: () => void;
+  onClick?: () => void;
+  onClickEnd?: () => void;
 }
 
 export class SliderWidget extends Widget<
@@ -71,6 +75,10 @@ export class SliderWidget extends Widget<
       hoverStyle: hoverStyle,
       clickStyle: clickStyle,
       onChange: onChange,
+      onHover: this.props.onHover,
+      onOut: this.props.onOut,
+      onClick: this.props.onClick,
+      onClickEnd: this.props.onClickEnd,
     });
     this.labelText = scene.add
       .text(x, y - 35, label, { 
