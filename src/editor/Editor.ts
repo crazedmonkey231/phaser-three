@@ -280,7 +280,7 @@ export class Editor implements IService {
       name: "fpsText",
       text: "",
       x: 30,
-      y: 35,
+      y: 25,
       style: { font: "24px Arial", color: "#ffffff" },
     });
 
@@ -373,7 +373,7 @@ export class Editor implements IService {
     const sliders: SliderWidget[] = [];
     const sliderNames = ["Time of Day", "Translation Snap", "Rotation Snap", "Scale Snap"];
     const sliderWidth = 175;
-    const sliderStartX = buttonStartX + buttonWidth + 20;
+    const sliderStartX = 165;
     const sliderStartY = 50;
 
     sliderNames.forEach((name, index) => {
