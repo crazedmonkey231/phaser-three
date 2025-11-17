@@ -1,11 +1,13 @@
 import * as THREE from "three";
 import { TransformControls } from "three/examples/jsm/Addons.js";
 import { Level } from "../Level";
-import { simpleRaycastMouse } from "../Utils";
+import {
+  raycastAttrObject3D,
+  simpleRaycastMouse,
+} from "../Utils";
 import { GameScene } from "../GameScene";
 import { TextWidget } from "../widgets/TextWidget";
-import { ButtonWidget } from "../widgets/ButtonWidget";
-import { IThing, WidgetType, IService } from '../Types';
+import { IThing, IService } from "../Types";
 import { Thing } from "../Thing";
 import { ObjectTray } from "./ObjectTray";
 import { BasicBoxThing } from "../things/BasicBoxThing";
@@ -14,14 +16,52 @@ import { FpsWidget } from "../widgets/FpsWidget";
 import { HologramSphere } from "../things/HologramSphere";
 import { TextThing } from "../things/TextThing";
 import { OrbitParticles } from "../things/OrbitParticles";
-import { createTextButton, ITextButton } from '../WidgetUtils';
+import { createTextButton, ITextButton } from "../WidgetUtils";
+import { Spline } from "../Spline";
 
+const EditorModes = {
+  Default: "default",
+  Spline: "spline",
+  Terrain: "terrain",
+  Object: "object",
+};
 
-/** 
+const editorItems = [
+  {
+    name: "Cube",
+    type: "cube",
+    icon: "cube-icon",
+    class: BasicBoxThing,
+    params: [],
+  },
+  {
+    name: "Hologram Sphere",
+    type: "hologramSphere",
+    icon: "cube-icon",
+    class: HologramSphere,
+    params: [],
+  },
+  {
+    name: "Text Thing",
+    type: "textThing",
+    icon: "cube-icon",
+    class: TextThing,
+    params: ["This is a text thing!"],
+  },
+  {
+    name: "Orbit Particles",
+    type: "orbitParticles",
+    icon: "cube-icon",
+    class: OrbitParticles,
+    params: [],
+  },
+];
+
+/**
  * This is a Level Editor.
- * 
+ *
  * Initialize this to allow translation, rotation, and scaling of things in the level.
- * 
+ *
  * Save the level then load it for your game.
  */
 export class Editor implements IService {
@@ -37,9 +77,10 @@ export class Editor implements IService {
   private rotationSnap: number = 15;
   private scaleSnap: number = 0.1;
   private toolTipText: TextWidget | null = null;
-  private headerButtons: ITextButton[] = [];
+  private editorButtons: ITextButton[] = [];
   private sliders: SliderWidget[] = [];
   private objectTray: ObjectTray | null = null;
+  private mode: string = EditorModes.Default;
   constructor(level: Level, params: any = {}) {
     this.level = level;
     this.scene = level.getGameScene();
@@ -58,16 +99,46 @@ export class Editor implements IService {
 
     // mouse click raycast
     this.scene.input.on("pointerdown", (event: any) => {
-      if (this.transformControls?.dragging || this.hoveredWidget || event.button !== 0) return;
+      if (
+        this.transformControls?.dragging ||
+        this.hoveredWidget ||
+        event.button !== 0
+      )
+        return;
+
       const mousePos = new THREE.Vector2(
         (event.downX / window.innerWidth) * 2 - 1,
         -(event.downY / window.innerHeight) * 2 + 1
       );
-      const intersects = simpleRaycastMouse(level, level.camera, mousePos, 1000);
-      if (intersects && intersects.size > 0) {
-        this.onPointerDown(event, intersects);
-      } else {
-        this.onDeselect();
+
+      if (this.mode === EditorModes.Default) {
+        const intersects = simpleRaycastMouse(
+          level,
+          level.camera,
+          mousePos,
+          1000
+        );
+        if (intersects && intersects.size > 0) {
+          this.onPointerDown(event, intersects);
+        } else {
+          this.deselect();
+        }
+      } else if (this.mode === EditorModes.Spline) {
+        this.deselect();
+        const { intersection, thing } = raycastAttrObject3D(
+          level,
+          level.camera,
+          mousePos,
+          1000,
+          "controlPoint"
+        );
+        if (intersection && thing) {
+          if (intersection.userData.controlPoint) {
+            this.setSelectedObject3D(intersection);
+          }
+        }
+      } else if (this.mode === EditorModes.Terrain) {
+      } else if (this.mode === EditorModes.Object) {
       }
     });
 
@@ -77,7 +148,7 @@ export class Editor implements IService {
     });
 
     // keydown events
-    this.scene.input.keyboard?.on('keydown', (event: any) => {
+    this.scene.input.keyboard?.on("keydown", (event: any) => {
       this.onKeyDown(event);
     });
 
@@ -95,18 +166,23 @@ export class Editor implements IService {
     });
   }
 
-  setSelected(thing: IThing | null, multiSelect: boolean = false) {
+  setSelectedThing(thing: IThing | null) {
+    if (!thing) return;
+    this.setSelectedObject3D(thing.group);
+  }
+
+  setSelectedObject3D(object: THREE.Object3D | null) {
     if (!this.enabled) return;
-    if (this.transformControls && this.level && thing) {
-      this.transformControls.attach(thing.group);
+    if (this.transformControls && this.level && object) {
+      this.transformControls.attach(object);
       this.gizmo = this.transformControls.getHelper();
       this.level.add(this.gizmo);
-      this.selected = thing;
-      this.level.postprocess.setOutlineSelectedObjects([thing.group]);
+      this.selected = object.userData.thing || object.parent?.userData.thing || null;
+      this.level.postprocess.setOutlineSelectedObjects([object]);
     }
   }
 
-  private onDeselect() {
+  deselect() {
     if (this.transformControls) {
       if (this.transformControls.dragging) return;
       this.transformControls.detach();
@@ -120,13 +196,13 @@ export class Editor implements IService {
   }
 
   private onPointerDown(event: PointerEvent, intersects: Set<IThing>) {
-    const multiselect = event.ctrlKey || event.metaKey;
+    // const multiselect = event.ctrlKey || event.metaKey;
     const firstThing = intersects.values().next().value;
     if (!firstThing) {
-      this.onDeselect();
+      this.deselect();
       return;
     }
-    this.setSelected(firstThing, multiselect);
+    this.setSelectedThing(firstThing);
   }
 
   private onKeyDown(event: KeyboardEvent) {
@@ -134,14 +210,14 @@ export class Editor implements IService {
     if (!this.level) return;
     if (event.key === "1") {
       if (this.selected) {
-       Thing.copy(this.selected);
+        Thing.copy(this.selected);
       }
     } else if (event.key === "2") {
-      this.setMode("translate");
+      this.setTransformMode("translate");
     } else if (event.key === "3") {
-      this.setMode("rotate");
+      this.setTransformMode("rotate");
     } else if (event.key === "4") {
-      this.setMode("scale");
+      this.setTransformMode("scale");
     } else if (event.key === "5" || event.key === "Delete") {
       this.deleteSelectedThing();
     } else if (event.key === "9") {
@@ -159,8 +235,31 @@ export class Editor implements IService {
     this.transformControls?.detach();
   }
 
-  setMode(mode: "translate" | "rotate" | "scale") {
+  setTransformMode(mode: "translate" | "rotate" | "scale") {
     this.transformControls?.setMode(mode);
+  }
+
+  setEditorMode(mode: string) {
+    this.mode = mode;
+    this.deselect();
+    this.createHud();
+    this.enableTransformTool();
+    this.setTransformToolEnabled(this.enabled);
+    this.hoveredWidget = null;
+    switch (mode) {
+      case EditorModes.Default:
+        this.setSpace("world");
+        break;
+      case EditorModes.Spline:
+        this.setSpace("local");
+        break;
+      case EditorModes.Terrain:
+        this.setSpace("local");
+        break;
+      case EditorModes.Object:
+        this.setSpace("local");
+        break;
+    }
   }
 
   setSnap(translationSnap?: number, rotationSnap?: number, scaleSnap?: number) {
@@ -191,7 +290,6 @@ export class Editor implements IService {
   setTransformToolEnabled(enabled: boolean) {
     if (this.transformControls) {
       this.transformControls.enabled = enabled;
-      this.level.getOrbitControls().setEnabled(enabled);
     }
   }
 
@@ -218,8 +316,8 @@ export class Editor implements IService {
       this.clearWidgets();
       this.toolTipText = null;
       this.objectTray = null;
-      this.scene.input?.off('pointerdown');
-      this.scene.input.keyboard?.off('keydown');
+      this.scene.input?.off("pointerdown");
+      this.scene.input.keyboard?.off("keydown");
       this.transformControls.detach();
       this.gizmo?.parent?.remove(this.gizmo);
       this.gizmo = null;
@@ -239,10 +337,10 @@ export class Editor implements IService {
       widget.dispose();
     });
     this.level.widgets.clear();
-    this.headerButtons.forEach((button) => {
+    this.editorButtons.forEach((button) => {
       button.dispose();
     });
-    this.headerButtons = [];
+    this.editorButtons = [];
     this.sliders.forEach((slider) => {
       slider.dispose();
     });
@@ -252,7 +350,7 @@ export class Editor implements IService {
   deleteSelectedThing() {
     if (this.selected) {
       this.level.removeThing(this.selected, true);
-      this.onDeselect();
+      this.deselect();
     }
   }
 
@@ -270,21 +368,21 @@ export class Editor implements IService {
 
   clearToolTipText() {
     if (this.toolTipText) {
-      this.toolTipText.setText('');
+      this.toolTipText.setText("");
     }
   }
 
-  private createHud(){
+  private createHud() {
     this.clearWidgets();
     const width = this.scene.game.canvas.width;
     const height = this.scene.game.canvas.height;
 
     this.toolTipText = new TextWidget(this.level, {
       name: "toolTip",
-      text: '',
+      text: "",
       x: 10,
       y: height - 30,
-      style: { font: '16px Arial', color: '#ffffff' }
+      style: { font: "16px Arial", color: "#ffffff" },
     });
 
     new FpsWidget(this.level, {
@@ -295,46 +393,88 @@ export class Editor implements IService {
       style: { font: "24px Arial", color: "#ffffff" },
     });
 
-    const headerButtonNames = ["Toggle", "Weather", "Duplicate", "Translate", "Rotate", "Scale", "Delete", "Reset", "Export"];
-    const headerButtons: ITextButton[] = [];
-    const buttonWidth = 120;
+    switch (this.mode) {
+      case EditorModes.Default:
+        this.createDefaultWidgets();
+        break;
+      case EditorModes.Spline:
+        this.createSplineWidgets();
+        break;
+      case EditorModes.Terrain:
+        this.createTerrainWidgets();
+        break;
+      case EditorModes.Object:
+        this.createObjectWidgets();
+        break;
+    }
+  }
+
+  private getExtraInfo(btn: string) {
+    switch (btn) {
+      case "Weather":
+        return this.level.weather.getEnabled() ? ": ON" : ": OFF";
+      case "Toggle":
+        return this.transformControls?.enabled ? ": ON" : ": OFF";
+      case "Default":
+        return " Editor";
+      case "Splines":
+        return " Editor";
+      case "Terrain":
+        return " Editor";
+      case "Objects":
+        return " Editor";
+      default:
+        return "";
+    }
+  }
+
+  private splineAction(action: string) {
+    if (this.selected instanceof Spline) {
+      switch (action) {
+        case "Add Node":
+          this.selected.addControlPoint();
+          break;
+        case "Remove Node":
+          this.selected.removeControlPoint();
+          break;
+        case "Toggle Closed":
+          this.selected.toggleClosed();
+          break;
+      }
+      this.deselect();
+    }
+  }
+
+  private createButtons(buttonNames: string[]) {
+    const editorButtons: ITextButton[] = [];
+    const buttonWidth = 160;
     const buttonHeight = 30;
-    const buttonStartX = 75;
+    const buttonStartX = 90;
     const buttonStartY = 100;
 
-    const getExtraInfo = (btn: string) => {
-      switch (btn) {
-        case "Weather":
-          return this.level.weather.getEnabled() ? ': ON' : ': OFF';
-        case "Toggle":
-          return this.transformControls?.enabled ? ': ON' : ': OFF';
-        default:
-          return '';
-      }
-    };
-
-    headerButtonNames.forEach((btn, index) => {
+    buttonNames.forEach((btn, index) => {
       const textButton: ITextButton = createTextButton(this.scene, {
         label: btn,
         x: buttonStartX,
         y: buttonStartY + index * (buttonHeight + 10),
         width: buttonWidth,
         height: buttonHeight,
-        hoverStyle: { 
+        hoverStyle: {
           fillColor: 0xaaaaaa,
-          scale: 1.1
+          scale: 1.1,
         },
-        clickStyle: { 
+        clickStyle: {
           fillColor: 0x333333,
-          scale: 0.85
+          scale: 0.85,
         },
         onHover: () => {
-          this.setToolTipText(btn + getExtraInfo(btn));
-          this.setTransformToolEnabled(false);
+          this.setToolTipText(btn + this.getExtraInfo(btn));
+          this.disableTransformTool();
           this.hoveredWidget = btn;
         },
         onOut: () => {
-          this.setToolTipText('');
+          this.setToolTipText("");
+          this.enableTransformTool();
           this.setTransformToolEnabled(this.enabled);
           this.hoveredWidget = null;
         },
@@ -344,7 +484,7 @@ export class Editor implements IService {
               this.enabled = !this.enabled;
               this.setTransformToolEnabled(this.enabled);
               if (!this.enabled) {
-                this.onDeselect();
+                this.deselect();
               }
               break;
             case "Weather":
@@ -356,13 +496,13 @@ export class Editor implements IService {
               }
               break;
             case "Translate":
-              this.setMode("translate");
+              this.setTransformMode("translate");
               break;
             case "Rotate":
-              this.setMode("rotate");
+              this.setTransformMode("rotate");
               break;
             case "Scale":
-              this.setMode("scale");
+              this.setTransformMode("scale");
               break;
             case "Delete":
               this.deleteSelectedThing();
@@ -373,18 +513,67 @@ export class Editor implements IService {
             case "Export":
               this.level.exportJson();
               break;
+            case "Default":
+              this.setEditorMode(EditorModes.Default);
+              break;
+            case "Splines":
+              this.setEditorMode(EditorModes.Spline);
+              break;
+            case "Terrain":
+              this.setEditorMode(EditorModes.Terrain);
+              break;
+            case "Objects":
+              this.setEditorMode(EditorModes.Object);
+              break;
+            case "New Spline":
+              if (this.mode === EditorModes.Spline) {
+                new Spline(this.level);
+              }
+              break;
+            case "Add Node":
+              this.splineAction(btn);
+              break;
+            case "Remove Node":
+              this.splineAction(btn);
+              break;
+            case "Toggle Closed":
+              this.splineAction(btn);
+              break;
           }
-          this.setToolTipText(btn + getExtraInfo(btn));
-        }
+          this.setToolTipText(btn + this.getExtraInfo(btn));
+        },
       });
-      headerButtons.push(textButton);
+      editorButtons.push(textButton);
     });
-    this.headerButtons = headerButtons;
+    this.editorButtons = editorButtons;
+  }
+
+  private createDefaultWidgets() {
+    const buttonNames = [
+      "Toggle",
+      "Weather",
+      "Duplicate",
+      "Translate",
+      "Rotate",
+      "Scale",
+      "Delete",
+      "Reset",
+      "Export",
+      "Splines",
+      "Terrain",
+      "Objects",
+    ];
+    this.createButtons(buttonNames);
 
     const sliders: SliderWidget[] = [];
-    const sliderNames = ["Time of Day", "Translation Snap", "Rotation Snap", "Scale Snap"];
+    const sliderNames = [
+      "Time of Day",
+      "Translation Snap",
+      "Rotation Snap",
+      "Scale Snap",
+    ];
     const sliderWidth = 175;
-    const sliderStartX = 165;
+    const sliderStartX = 185;
     const sliderStartY = 50;
 
     sliderNames.forEach((name, index) => {
@@ -420,7 +609,7 @@ export class Editor implements IService {
       }
       const slider = new SliderWidget(this.level, {
         name: name,
-        label: name + ': ' + value.toFixed(2),
+        label: name + ": " + value.toFixed(2),
         x: sliderStartX + index * (sliderWidth + 30),
         y: sliderStartY,
         width: sliderWidth,
@@ -438,7 +627,8 @@ export class Editor implements IService {
           this.hoveredWidget = name;
         },
         onOut: () => {
-          this.setToolTipText('');
+          this.setToolTipText("");
+          this.enableTransformTool();
           this.setTransformToolEnabled(this.enabled);
           this.hoveredWidget = null;
         },
@@ -457,71 +647,74 @@ export class Editor implements IService {
             case "Translation Snap":
               this.translationSnap = newValue;
               slider.setText(`Translation Snap: ${newValue.toFixed(2)}`);
-              this.setSnap(this.translationSnap, this.rotationSnap, this.scaleSnap);
+              this.setSnap(
+                this.translationSnap,
+                this.rotationSnap,
+                this.scaleSnap
+              );
               break;
             case "Rotation Snap":
               this.rotationSnap = newValue;
               slider.setText(`Rotation Snap: ${newValue.toFixed(2)}`);
-              this.setSnap(this.translationSnap, this.rotationSnap, this.scaleSnap);
+              this.setSnap(
+                this.translationSnap,
+                this.rotationSnap,
+                this.scaleSnap
+              );
               break;
             case "Scale Snap":
               this.scaleSnap = newValue;
               slider.setText(`Scale Snap: ${newValue.toFixed(2)}`);
-              this.setSnap(this.translationSnap, this.rotationSnap, this.scaleSnap);
+              this.setSnap(
+                this.translationSnap,
+                this.rotationSnap,
+                this.scaleSnap
+              );
               break;
           }
-        }
+        },
       });
       sliders.push(slider);
     });
     this.sliders = sliders;
 
-    this.createObjectTray();
-  }
-
-  /** Create the object tray for the transform tool, add custom things here. Ensure objects are exposed in the Defs. */
-  private createObjectTray() {
+    // Create object tray
     if (this.objectTray) {
       this.objectTray.dispose();
     }
     this.objectTray = new ObjectTray(this.level, {
       name: "object tray",
-      items: [
-        {
-          name: "Cube",
-          type: "cube",
-          icon: "cube-icon",
-          class: BasicBoxThing,
-          params: []
-        },
-        {
-          name: "Hologram Sphere",
-          type: "hologramSphere",
-          icon: "cube-icon",
-          class: HologramSphere,
-          params: []
-        },
-        {
-          name: "Text Thing",
-          type: "textThing",
-          icon: "cube-icon",
-          class: TextThing,
-          params: ["This is a text thing!"]
-        },
-        {
-          name: "Orbit Particles",
-          type: "orbitParticles",
-          icon: "cube-icon",
-          class: OrbitParticles,
-          params: []
-        }
-      ]
+      items: editorItems,
     });
+  }
+
+  private createSplineWidgets() {
+    const buttonNames = [
+      "Toggle",
+      "New Spline",
+      "Add Node",
+      "Remove Node",
+      "Toggle Closed",
+      "Default",
+      "Terrain",
+      "Objects",
+    ];
+    this.createButtons(buttonNames);
+  }
+
+  private createTerrainWidgets() {
+    const buttonNames = ["Toggle", "Default", "Spline", "Objects"];
+    this.createButtons(buttonNames);
+  }
+
+  private createObjectWidgets() {
+    const buttonNames = ["Toggle", "Default", "Spline", "Terrain"];
+    this.createButtons(buttonNames);
   }
 
   /** Update the transform tool, called from level update */
   update(time: number, dt: number, args: any) {
-    const slider = this.sliders.find(s => s.props.name === "Time of Day");
+    const slider = this.sliders.find((s) => s.props.name === "Time of Day");
     if (slider) {
       const timeOfDay = this.level.weather.getTimeOfDay();
       slider.getSlider()?.setValue(timeOfDay);
@@ -531,7 +724,10 @@ export class Editor implements IService {
     if (this.toolTipText && this.toolTipText.gameObject) {
       const textWidth = this.toolTipText.gameObject.width;
       const textHeight = this.toolTipText.gameObject.height;
-      this.toolTipText.gameObject.setPosition(mousePos.x + 15, mousePos.y + textHeight);
+      this.toolTipText.gameObject.setPosition(
+        mousePos.x + 15,
+        mousePos.y + textHeight
+      );
       this.toolTipText.gameObject.setDepth(1000);
     }
   }

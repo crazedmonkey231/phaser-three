@@ -1,1 +1,64 @@
-{"paused":false,"weather":{"timeOfDay":6.83714285714286,"enabled":false},"editor":{"enabled":true,"translationSnap":0.9565714285714287,"rotationSnap":15,"scaleSnap":0.1},"camera":{"transform":{"position":{"x":-29.26252917480763,"y":-11.679208272177364,"z":31.068958899964898},"rotation":{"isEuler":true,"_x":0.26710736682350966,"_y":-0.7554653663313194,"_z":1.4388009361418674e-17,"_order":"YXZ"},"scale":{"x":1,"y":1,"z":1}}},"things":[{"classType":"OrbitParticles","name":"Orbit Particles","type":"orbitParticles","alive":true,"timeAlive":-1,"tags":[],"transform":{"position":{"x":0,"y":0,"z":0},"rotation":{"isEuler":true,"_x":0,"_y":0,"_z":0,"_order":"XYZ"},"scale":{"x":1,"y":1,"z":1}},"data":{}},{"classType":"HologramSphere","name":"Hologram Sphere","type":"HologramSphere","alive":true,"timeAlive":-1,"tags":[],"transform":{"position":{"x":0,"y":0,"z":0},"rotation":{"isEuler":true,"_x":0,"_y":0,"_z":0,"_order":"XYZ"},"scale":{"x":39.800000000000004,"y":39.800000000000004,"z":39.800000000000004}},"data":{}}]}
+{
+  "paused": false,
+  "weather": { "timeOfDay": 9.200000000000001, "enabled": false },
+  "editor": {
+    "enabled": true,
+    "translationSnap": 0.9565714285714287,
+    "rotationSnap": 15,
+    "scaleSnap": 0.1
+  },
+  "camera": {
+    "transform": {
+      "position": {
+        "x": -2.9696284680812934,
+        "y": 2.563463782958734,
+        "z": -9.659708894552212
+      },
+      "rotation": {
+        "isEuler": true,
+        "_x": -0.2484211386610493,
+        "_y": -2.843338642586565,
+        "_z": 7.158651398347324e-18,
+        "_order": "YXZ"
+      },
+      "scale": { "x": 1, "y": 1, "z": 1 }
+    }
+  },
+  "things": [
+    {
+      "classType": "Spline",
+      "name": "spline",
+      "type": "Spline",
+      "alive": true,
+      "timeAlive": -1,
+      "tags": [],
+      "transform": {
+        "position": { "x": -1.9131428571428575, "y": 0, "z": 0 },
+        "rotation": {
+          "isEuler": true,
+          "_x": 0,
+          "_y": 0,
+          "_z": 0,
+          "_order": "XYZ"
+        },
+        "scale": { "x": 1, "y": 1, "z": 1 }
+      },
+      "data": {
+        "splineData": {
+          "arcSegments": 16,
+          "closed": true,
+          "controlPoints": [
+            { "x": 0, "y": 0, "z": 0 },
+            { "x": -0.9565714285714287, "y": 3.826285714285715, "z": 0 },
+            { "x": 4, "y": 3.826285714285715, "z": -2.869714285714286 },
+            {
+              "x": 4.782857142857144,
+              "y": -0.9565714285714287,
+              "z": -2.869714285714286
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

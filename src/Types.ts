@@ -25,7 +25,7 @@ export interface XYZ {
   x: number;
   y: number;
   z: number;
-}
+};
 
 /** Inventory item interface */
 export interface Item {

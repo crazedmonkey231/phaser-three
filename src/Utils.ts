@@ -252,6 +252,45 @@ export function simpleRaycastFirst(
   return intersection.object.parent?.userData.thing;
 }
 
+/** Raycast for the first intersected thing */
+export function simpleRaycastObject3D(
+  root: THREE.Object3D,
+  camera: any,
+  mouse: THREE.Vector2,
+  maxDistance: number = 100
+): { intersection: THREE.Object3D | null, thing: IThing | null } {
+  const raycaster = new THREE.Raycaster(undefined, undefined, 0, maxDistance);
+  camera.updateMatrixWorld();
+  raycaster.setFromCamera(mouse, camera);
+  const intersects = raycaster.intersectObject(root, true);
+  if (intersects.length === 0) return { intersection: null, thing: null };
+  const intersection = intersects[0].object;
+  const parentThing = intersection.parent?.userData.thing;
+  return { intersection, thing: parentThing ? parentThing : null };
+}
+
+/** Raycast for the first intersected thing */
+export function raycastAttrObject3D(
+  root: THREE.Object3D,
+  camera: any,
+  mouse: THREE.Vector2,
+  maxDistance: number = 100,
+  attr: string = "thing"
+): { intersection: THREE.Object3D | null, thing: IThing | null } {
+  const raycaster = new THREE.Raycaster(undefined, undefined, 0, maxDistance);
+  camera.updateMatrixWorld();
+  raycaster.setFromCamera(mouse, camera);
+  const intersects = raycaster.intersectObject(root, true);
+  if (intersects.length === 0) return { intersection: null, thing: null };
+  for (const intersect of intersects) {
+    const intersection = intersect.object;
+    if (!intersection.userData[attr]) continue;
+    const parentThing = intersection.parent?.userData.thing;
+    return { intersection, thing: parentThing };
+  }
+  return { intersection: null, thing: null };
+}
+
 /** Raycast for all intersected objects */
 export function simpleRaycastAll(
   root: THREE.Object3D,

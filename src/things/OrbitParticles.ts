@@ -12,7 +12,7 @@ export interface OrbitParticleData {
 
 // A class to manage particles that orbit around a central point in the game level
 export class OrbitParticles extends Thing {
-  particleCount: number = 800;
+  particleCount: number = 300;
   particles: THREE.BufferGeometry | null = null;
   shaderMaterial: THREE.ShaderMaterial | null = null;
   points: THREE.Points | null = null;
