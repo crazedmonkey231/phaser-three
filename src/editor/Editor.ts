@@ -1,10 +1,7 @@
 import * as THREE from "three";
 import { TransformControls } from "three/examples/jsm/Addons.js";
 import { Level } from "../Level";
-import {
-  raycastAttrObject3D,
-  simpleRaycastMouse,
-} from "../Utils";
+import { raycastAttrObject3D, simpleRaycastMouse } from "../Utils";
 import { GameScene } from "../GameScene";
 import { TextWidget } from "../widgets/TextWidget";
 import { IThing, IService } from "../Types";
@@ -139,6 +136,19 @@ export class Editor implements IService {
         }
       } else if (this.mode === EditorModes.Terrain) {
       } else if (this.mode === EditorModes.Object) {
+        this.deselect();
+        const { intersection, thing } = raycastAttrObject3D(
+          level,
+          level.camera,
+          mousePos,
+          1000,
+          "child"
+        );
+        if (intersection && thing) {
+          if (intersection.userData.child) {
+            this.setSelectedObject3D(intersection);
+          }
+        }
       }
     });
 
@@ -177,7 +187,8 @@ export class Editor implements IService {
       this.transformControls.attach(object);
       this.gizmo = this.transformControls.getHelper();
       this.level.add(this.gizmo);
-      this.selected = object.userData.thing || object.parent?.userData.thing || null;
+      this.selected =
+        object.userData.thing || object.parent?.userData.thing || null;
       this.level.postprocess.setOutlineSelectedObjects([object]);
     }
   }
@@ -382,7 +393,12 @@ export class Editor implements IService {
       text: "",
       x: 10,
       y: height - 30,
-      style: { font: "16px Arial", color: "#ffffff" },
+      style: {
+        fontSize: "16px",
+        fontStyle: "bold",
+        fontFamily: "Segoe UI",
+        color: "#ffffffff",
+      },
     });
 
     new FpsWidget(this.level, {
@@ -390,7 +406,12 @@ export class Editor implements IService {
       text: "",
       x: 30,
       y: 25,
-      style: { font: "24px Arial", color: "#ffffff" },
+      style: {
+        fontSize: "32px",
+        fontStyle: "bold",
+        fontFamily: "Segoe UI",
+        color: "#ffffffff",
+      },
     });
 
     switch (this.mode) {
@@ -459,6 +480,12 @@ export class Editor implements IService {
         y: buttonStartY + index * (buttonHeight + 10),
         width: buttonWidth,
         height: buttonHeight,
+        textStyle: {
+          fontSize: "18px",
+          fontStyle: "bold",
+          fontFamily: "Segoe UI",
+          color: "#ffffffff",
+        },
         hoverStyle: {
           fillColor: 0xaaaaaa,
           scale: 1.1,

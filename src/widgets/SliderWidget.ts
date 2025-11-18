@@ -82,11 +82,12 @@ export class SliderWidget extends Widget<
     });
     this.labelText = scene.add
       .text(x, y - 35, label, { 
-        fontSize: "16px", 
-        fontFamily: "Arial",
-        color: "#000000ff"
+        fontSize: "16px",
+        fontStyle: "bold",
+        fontFamily: "Segoe UI",
+        color: "#ffffffff"
       })
-      .setStroke("#ffffffff", 2)
+      .setStroke("#000000ff", 4)
       .setOrigin(0);
 
     this.gameObject = scene.add.container(0, 0, [
