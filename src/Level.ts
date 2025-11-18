@@ -171,6 +171,10 @@ export class Level extends THREE.Scene implements IService {
     return this.editor;
   }
 
+  isEditing(): boolean {
+    return this.editor !== null;
+  }
+
   /** Create and return OrbitControls */
   getOrbitControls() {
     if (this.orbitControls === null) {

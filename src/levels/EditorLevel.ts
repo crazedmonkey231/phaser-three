@@ -1,7 +1,6 @@
 import * as THREE from "three";
 import { GameScene } from "../GameScene";
 import { Level } from "../Level";
-import { createSlider } from "../WidgetUtils";
 
 /** A level class for the level editor */
 export class EditorLevel extends Level {

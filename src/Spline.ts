@@ -11,6 +11,8 @@ export interface SplineData {
   closed: boolean;
   tension: number;
   controlPoints: XYZ[];
+  color?: number;
+  lineWidth?: number;
 }
 
 export function defaultSplineData(): SplineData {
@@ -33,26 +35,30 @@ export class Spline extends Thing {
   private curve: THREE.CatmullRomCurve3 | null = null;
   private curveMesh: Line2 | null = null;
   private curveGeometry: LineGeometry | null = null;
+  private isEditing: boolean = false;
   constructor(level: Level, name: string = "spline", type: string = "Spline", data: Partial<SplineData> = {}) {
     super(level, name, type);
     if (!this.data.splineData) {
       const defaultData = defaultSplineData();
       this.data.splineData = { ...defaultData, ...data };
     }
+    this.isEditing = level.isEditing();
   }
 
   private createCurve() {
+    const { splineType, arcSegments, closed, tension, controlPoints, color, lineWidth } = this.data.splineData;
+    const points: THREE.Vector3[] = controlPoints.map((cp: XYZ) => new THREE.Vector3(cp.x, cp.y, cp.z));
+    this.curve = new THREE.CatmullRomCurve3(points, closed, splineType, tension);
+
+    if (!this.isEditing) return;
     if (this.curveMesh) {
       this.group.remove(this.curveMesh);
     }
-    const points = this.controlPoints.map(cp => cp.position);
-    const { splineType, arcSegments, closed, tension } = this.data.splineData;
-    this.curve = new THREE.CatmullRomCurve3(points, closed, splineType, tension);
     const lineGeometry = new LineGeometry();
     lineGeometry.setPositions(this.curve.getPoints(arcSegments).flatMap(p => [p.x, p.y, p.z]));
     const matLine = new LineMaterial({
-      color: 0x00ff00,
-      linewidth: 0.05,
+      color: color || 0x00ff00,
+      linewidth: lineWidth || 0.05,
       worldUnits: true,
       vertexColors: false,
       alphaToCoverage: true,
@@ -75,7 +81,8 @@ export class Spline extends Thing {
     }
   }
 
-  createControlPoint(position: THREE.Vector3): THREE.Object3D {
+  createControlPointMesh(position: THREE.Vector3): THREE.Object3D | null {
+    if (!this.isEditing) return null;
     const box = new THREE.Mesh(
       new THREE.BoxGeometry(0.3, 0.3, 0.3),
       new THREE.MeshStandardMaterial({
@@ -91,9 +98,11 @@ export class Spline extends Thing {
   }
 
   addControlPoint() {
-    const lastPoint = this.controlPoints[this.controlPoints.length - 1];
-    const newPosition = lastPoint ? lastPoint.position.clone().add(new THREE.Vector3(2, 0, 0)) : new THREE.Vector3(0, 0, 0);
-    this.createControlPoint(newPosition);
+    const controlPoints = this.data.splineData.controlPoints;
+    const lastPoint = controlPoints[controlPoints.length - 1];
+    const newPosition = lastPoint ? new THREE.Vector3(lastPoint.x, lastPoint.y, lastPoint.z).clone().add(new THREE.Vector3(2, 0, 0)) : new THREE.Vector3(0, 0, 0);
+    controlPoints.push({ x: newPosition.x, y: newPosition.y, z: newPosition.z });
+    this.createControlPointMesh(newPosition);
   }
 
   removeControlPoint() {
@@ -102,6 +111,7 @@ export class Spline extends Thing {
     if (lastPoint) {
       this.group.remove(lastPoint);
     }
+    this.data.splineData.controlPoints.pop();
     this.updateCurve();
   }
 
@@ -124,15 +134,18 @@ export class Spline extends Thing {
   }
 
   create(): void {
-    const { controlPoints } = this.data.splineData;
-    controlPoints.forEach((pos: XYZ) => {
-      const position = new THREE.Vector3(pos.x, pos.y, pos.z);
-      this.createControlPoint(position);
-    });
+    if (this.isEditing) {
+      const { controlPoints } = this.data.splineData;
+      controlPoints.forEach((pos: XYZ) => {
+        const position = new THREE.Vector3(pos.x, pos.y, pos.z);
+        this.createControlPointMesh(position);
+      });
+    }
     this.createCurve();
   }
 
   update(time: number, dt: number): void {
+    if (!this.isEditing) return;
     this.syncControlPoints();
     this.updateCurve();
   }

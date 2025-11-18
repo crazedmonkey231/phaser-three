@@ -414,7 +414,7 @@ export class Editor implements IService {
       case "Weather":
         return this.level.weather.getEnabled() ? ": ON" : ": OFF";
       case "Toggle":
-        return this.transformControls?.enabled ? ": ON" : ": OFF";
+        return this.transformControls?.enabled ? " Gizmo : ON" : " Gizmo : OFF";
       case "Default":
         return " Editor";
       case "Splines":
