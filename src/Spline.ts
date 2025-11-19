@@ -2,30 +2,33 @@ import * as THREE from "three";
 import { Level } from "./Level";
 import { Thing } from "./Thing";
 import { XYZ } from './Types';
-import { Line2, LineGeometry, LineMaterial } from "three/examples/jsm/Addons.js";
 
 /** Interface representing the data structure for a Spline */
 export interface SplineData {
   splineType: string;
-  arcSegments: number;
+  tubularSegments: number;
+  radius: number;
+  radialSegments: number;
   closed: boolean;
   tension: number;
   controlPoints: XYZ[];
   color?: number;
-  lineWidth?: number;
 }
 
 export function defaultSplineData(): SplineData {
   return {
     splineType: "catmullrom",
-    arcSegments: 64,
+    tubularSegments: 128,
+    radius: 0.05,
+    radialSegments: 8,
     closed: false,
     tension: 0.5,
     controlPoints: [
       { x: 0, y: 0, z: 0 },
       { x: 2, y: 0, z: 0 },
       { x: 4, y: 0, z: 0 },
-    ]
+    ],
+    color: 0x00ff00,
   };
 }
 
@@ -33,8 +36,8 @@ export function defaultSplineData(): SplineData {
 export class Spline extends Thing {
   private controlPoints: THREE.Object3D[] = [];
   private curve: THREE.CatmullRomCurve3 | null = null;
-  private curveMesh: Line2 | null = null;
-  private curveGeometry: LineGeometry | null = null;
+  private curveGeometry: THREE.TubeGeometry | null = null;
+  private curveMesh: THREE.Mesh | null = null;
   private isEditing: boolean = false;
   constructor(level: Level, name: string = "spline", type: string = "Spline", data: Partial<SplineData> = {}) {
     super(level, name, type);
@@ -46,7 +49,7 @@ export class Spline extends Thing {
   }
 
   private createCurve() {
-    const { splineType, arcSegments, closed, tension, controlPoints, color, lineWidth } = this.data.splineData;
+    const { splineType, tubularSegments, closed, tension, controlPoints, color, radius, radialSegments } = this.data.splineData;
     const points: THREE.Vector3[] = controlPoints.map((cp: XYZ) => new THREE.Vector3(cp.x, cp.y, cp.z));
     this.curve = new THREE.CatmullRomCurve3(points, closed, splineType, tension);
 
@@ -54,20 +57,12 @@ export class Spline extends Thing {
     if (this.curveMesh) {
       this.group.remove(this.curveMesh);
     }
-    const lineGeometry = new LineGeometry();
-    lineGeometry.setPositions(this.curve.getPoints(arcSegments).flatMap(p => [p.x, p.y, p.z]));
-    const matLine = new LineMaterial({
+    this.curveGeometry = new THREE.TubeGeometry(this.curve, tubularSegments, radius || 0.05, radialSegments || 8, closed);
+    const material = new THREE.MeshStandardMaterial({ 
       color: color || 0x00ff00,
-      linewidth: lineWidth || 0.05,
-      worldUnits: true,
-      vertexColors: false,
-      alphaToCoverage: true,
-    });
-    const line = new Line2(lineGeometry, matLine);
-    line.computeLineDistances();
-    line.scale.set( 1, 1, 1 );
-    this.curveMesh = line;
-    this.curveGeometry = lineGeometry;
+      side: THREE.DoubleSide
+     });
+    this.curveMesh = new THREE.Mesh(this.curveGeometry, material);
     this.group.add(this.curveMesh);
   }
 
@@ -76,9 +71,24 @@ export class Spline extends Thing {
     const points = this.controlPoints.map(cp => cp.position);
     this.curve.points = points;
     if (this.curveGeometry) {
-      this.curveGeometry.setPositions(this.curve.getPoints(this.data.splineData.arcSegments).flatMap(p => [p.x, p.y, p.z]));
-      this.curveGeometry.attributes.position.needsUpdate = true;
+      this.curveGeometry.dispose();
+      const { tubularSegments, radius, radialSegments, closed } = this.data.splineData;
+      this.curveGeometry = new THREE.TubeGeometry(this.curve, tubularSegments, radius || 0.05, radialSegments || 8, closed);
+      if (this.curveMesh) {
+        this.curveMesh.geometry.dispose();
+        this.curveMesh.geometry = this.curveGeometry;
+      }
     }
+  }
+
+  getPointAt(t: number, optionalTarget?: THREE.Vector3): THREE.Vector3 | null {
+    if (!this.curve) return null;
+    return this.curve.getPointAt(t, optionalTarget);
+  }
+
+  getPoint(t: number, optionalTarget?: THREE.Vector3): THREE.Vector3 | null {
+    if (!this.curve) return null;
+    return this.curve.getPoint(t, optionalTarget);
   }
 
   createControlPointMesh(position: THREE.Vector3): THREE.Object3D | null {
