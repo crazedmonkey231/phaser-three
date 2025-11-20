@@ -738,12 +738,12 @@ export class Editor implements IService {
   }
 
   private createTerrainWidgets() {
-    const buttonNames = ["Toggle", "Default", "Spline", "Objects"];
+    const buttonNames = ["Toggle", "Default", "Splines", "Objects"];
     this.createButtons(buttonNames);
   }
 
   private createObjectWidgets() {
-    const buttonNames = ["Toggle", "Default", "Spline", "Terrain"];
+    const buttonNames = ["Toggle", "Default", "Splines", "Terrain"];
     this.createButtons(buttonNames);
   }
 
