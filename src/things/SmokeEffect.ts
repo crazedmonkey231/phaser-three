@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { Level } from "../Level";
 import { Thing } from "../Thing";
+import { SmokeShader } from "../shaders/SmokeShader";
 
 // Simple SmokeEffect thing
 export class SmokeEffect extends Thing {
@@ -14,38 +15,7 @@ export class SmokeEffect extends Thing {
 
   create(): void {
     const geometry = new THREE.SphereGeometry(1.0, 8, 8);
-    this.material = new THREE.ShaderMaterial({ 
-      uniforms: {
-        time: { value: 0.0 },
-        fade: { value: 1.0 }
-      },
-      vertexShader: `
-        uniform float time;
-        uniform float fade;
-        varying vec2 vUv;
-        void main() {
-          vUv = uv;
-          vec3 pos = position;
-          pos.x += sin(uv.y * 10.0 + time * 5.0) * 0.25;
-          pos.y += sin(uv.x * 10.0 + time * 5.0) * 0.25;
-          pos.z += sin((uv.x + uv.y) * 10.0 + time * 5.0) * 0.25;
-          pos *= fade;
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
-        }
-      `,
-      fragmentShader: `
-        uniform float time;
-        varying vec2 vUv;
-        void main() {
-          // Simple white smoke effect with fading alpha
-          float alpha = 1.0 - length(vUv - 0.5) * 2.0;
-          alpha *= 1.0 - (time / 3.0);
-          gl_FragColor = vec4(1.0, 1.0, 1.0, alpha);
-        }
-      `,
-      transparent: true,
-      depthWrite: false,
-    });
+    this.material = new THREE.ShaderMaterial(SmokeShader);
     const instanceCount = 8;
     for (let i = 0; i < instanceCount; i++) {
       const mesh = new THREE.Mesh(geometry, this.material);

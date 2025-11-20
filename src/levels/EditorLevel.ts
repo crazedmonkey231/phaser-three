@@ -24,6 +24,7 @@ export class EditorLevel extends Level {
     this.postprocess.addFXAA("fxaa");
     this.postprocess.addBloom("bloom", 0.01, 0.01, 8.0);
     // this.postprocess.addAfterimage("afterimage", 0.9);
+    // this.postprocess.addSSR("ssr");
     this.postprocess.addOutput("output");
     // this.postprocess.addShaderPass("test", HexDitheringShader);
 
