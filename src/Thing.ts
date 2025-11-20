@@ -131,7 +131,6 @@ export abstract class Thing implements IThing {
   /** Exports the thing to a JSON object. */
   toJsonObject(): any {
     return {
-      classType: this.constructor.name,
       name: this.name,
       type: this.type,
       alive: this.alive,
@@ -155,7 +154,7 @@ export abstract class Thing implements IThing {
    * @param json The JSON object representing the thing.
   */
   static fromJsonObject(level: Level, json: any): IThing {
-    const classType = level.defs[json.classType];
+    const classType = level.defs[json.type];
     const thing: IThing = new classType(level, json.name, json.type);
     thing.alive = json.alive;
     thing.timeAlive = json.timeAlive;
