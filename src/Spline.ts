@@ -32,13 +32,20 @@ export function defaultSplineData(): SplineData {
   };
 }
 
+export interface FrenetFrameResult {
+  position: THREE.Vector3;
+  tangent: THREE.Vector3;
+  normal: THREE.Vector3;
+  binormal: THREE.Vector3;
+}
+
 /** Spline class representing a series of control points */
 export class Spline extends Thing {
-  private controlPoints: THREE.Object3D[] = [];
-  private curve: THREE.CatmullRomCurve3 | null = null;
-  private curveGeometry: THREE.TubeGeometry | null = null;
-  private curveMesh: THREE.Mesh | null = null;
-  private isEditing: boolean = false;
+  protected controlPoints: THREE.Object3D[] = [];
+  protected curve: THREE.CatmullRomCurve3 | null = null;
+  protected curveGeometry: THREE.TubeGeometry | null = null;
+  protected curveMesh: THREE.Mesh | null = null;
+  protected isEditing: boolean = false;
   constructor(level: Level, name: string = "spline", type: string = "Spline", data: Partial<SplineData> = {}) {
     super(level, name, type);
     if (!this.data.splineData) {
@@ -48,7 +55,7 @@ export class Spline extends Thing {
     this.isEditing = level.isEditing();
   }
 
-  private createCurve() {
+  createCurve() {
     const { splineType, tubularSegments, closed, tension, controlPoints, color, radius, radialSegments } = this.data.splineData;
     const points: THREE.Vector3[] = controlPoints.map((cp: XYZ) => new THREE.Vector3(cp.x, cp.y, cp.z));
     this.curve = new THREE.CatmullRomCurve3(points, closed, splineType, tension);
@@ -66,7 +73,7 @@ export class Spline extends Thing {
     this.group.add(this.curveMesh);
   }
 
-  private updateCurve() {
+  updateCurve() {
     if (!this.curve) return;
     const points = this.controlPoints.map(cp => cp.position);
     this.curve.points = points;
@@ -89,6 +96,21 @@ export class Spline extends Thing {
   getPoint(t: number, optionalTarget?: THREE.Vector3): THREE.Vector3 | null {
     if (!this.curve) return null;
     return this.curve.getPoint(t, optionalTarget);
+  }
+
+  /**  Returns the Frenet frame (tangent, normal, binormal) at a given parameter t along the curve */
+  getFrenetFrameAt(t: number): FrenetFrameResult | null {
+    if (!this.curve) return null;
+    const { tubularSegments, closed } = this.data.splineData;
+    const tangent = this.curve.getTangent(t);
+    const position = this.curve.getPoint(t);
+    const normal = new THREE.Vector3();
+    const binormal = new THREE.Vector3();
+    const frames = this.curve.computeFrenetFrames(tubularSegments, closed);
+    const segment = Math.floor(t * tubularSegments);
+    normal.copy(frames.normals[segment]);
+    binormal.copy(frames.binormals[segment]);
+    return { position, tangent, normal, binormal };
   }
 
   createControlPointMesh(position: THREE.Vector3): THREE.Object3D | null {
@@ -156,6 +178,7 @@ export class Spline extends Thing {
 
   update(time: number, dt: number): void {
     if (!this.isEditing) return;
+    if (this.controlPoints.length === 0) return;
     this.syncControlPoints();
     this.updateCurve();
   }

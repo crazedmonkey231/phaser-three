@@ -5,6 +5,7 @@ import { HologramSphere } from "./things/HologramSphere";
 import { TextThing } from "./things/TextThing";
 import { OrbitParticles } from "./things/OrbitParticles";
 import { Spline } from "./Spline";
+import { BallSpline } from "./things/BallSpline";
 
 /** 
  * A registry of all the things that can be created in the game, used for deserialization and dynamic creation of things by name.
@@ -20,4 +21,5 @@ export const Defs: Record<string, any> = {
   "TextThing": TextThing,
   "OrbitParticles": OrbitParticles,
   "Spline": Spline,
+  "BallSpline": BallSpline,
 }

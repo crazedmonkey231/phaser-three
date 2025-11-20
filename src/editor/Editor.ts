@@ -15,6 +15,7 @@ import { TextThing } from "../things/TextThing";
 import { OrbitParticles } from "../things/OrbitParticles";
 import { createTextButton, ITextButton } from "../WidgetUtils";
 import { Spline } from "../Spline";
+import { BallSpline } from "../things/BallSpline";
 
 const EditorModes = {
   Default: "default",
@@ -50,6 +51,13 @@ const editorItems = [
     type: "orbitParticles",
     icon: "cube-icon",
     class: OrbitParticles,
+    params: [],
+  },
+  {
+    name: "Ball Spline",
+    type: "ballSpline",
+    icon: "cube-icon",
+    class: BallSpline,
     params: [],
   },
 ];

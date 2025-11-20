@@ -19,8 +19,8 @@ export class OrbitParticles extends Thing {
   particleData: OrbitParticleData;
   orbitRadius: number;
   spatialPartition: Map<string, Set<number>> = new Map();
-  partitionSize: number = 7;
-  constructor(level: Level, name: string = "orbitParticles", type: string = "Particle", orbitRadius: number = 21) {
+  partitionSize: number = 10;
+  constructor(level: Level, name: string = "orbitParticles", type: string = "Particle", orbitRadius: number = 30) {
     super(level, name, type);
     this.orbitRadius = orbitRadius;
     this.particleData = {
@@ -127,7 +127,7 @@ export class OrbitParticles extends Thing {
               const ny = dy / distance;
               const nz = dz / distance;
               // Simple attraction force
-              const force = 0.00004 * overlap;
+              const force = 0.00006 * overlap;
 
               this.particleData.particlePositions[idx1 * 3] -= force * nx;
               this.particleData.particlePositions[idx1 * 3 + 1] -= force * ny;
