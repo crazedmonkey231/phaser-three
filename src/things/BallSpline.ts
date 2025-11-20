@@ -33,12 +33,17 @@ export class BallSpline extends Spline {
         metalness: 0.2, 
         roughness: 0.7,
         emissive: 0x550000,
-        emissiveIntensity: 5,
+        emissiveIntensity: 100,
       })
     );
     ball.castShadow = true;
     ball.receiveShadow = true;
     this.group.add(ball);
+
+    const light = new THREE.PointLight(0xff0000, 10, 3, 0.01);
+    light.position.set(0, -1, 0);
+    light.castShadow = true;
+    ball.add(light);
     this.ballMesh = ball;
   }
 

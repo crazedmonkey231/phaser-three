@@ -28,6 +28,14 @@ export class Weather implements IService {
     this.directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
     this.directionalLight.position.set(3, 25, 4);
     this.directionalLight.castShadow = true;
+    this.directionalLight.shadow.mapSize.set(2048, 2048); // or 4096 if you can afford it
+    this.directionalLight.shadow.camera.left = -50;
+    this.directionalLight.shadow.camera.right = 50;
+    this.directionalLight.shadow.camera.top = 50;
+    this.directionalLight.shadow.camera.bottom = -50;
+    this.directionalLight.shadow.camera.near = 0.5;
+    this.directionalLight.shadow.camera.far = 200;
+    this.directionalLight.shadow.bias = -0.0001;
 
     this.ambientLight = new THREE.AmbientLight(0xffffff, 0.35);
     this.hemisphericLight = new THREE.HemisphereLight(0xffffff, 0.5);
@@ -63,9 +71,12 @@ export class Weather implements IService {
     return this.enabled;
   }
 
-  setTimeOfDay(hour: number) {
+  setTimeOfDay(hour: number, forceUpdate: boolean = false) {
     this.timeofDay = hour % 24;
     this.calculateSunPosition();
+    if (forceUpdate) {
+      this.level.environment = premGenerator.fromScene(this.level).texture;
+    }
   }
 
   getTimeOfDay(): number {
@@ -98,6 +109,14 @@ export class Weather implements IService {
     this.sky?.material.uniforms['sunPosition'].value.copy(this.sunPosition);
     renderer.toneMappingExposure = Math.max(0.1, this.sunPosition.y * 0.5);
     if (this.sky) this.sky.material.needsUpdate = true;
+
+    this.directionalLight?.position.copy(this.sunPosition.clone().multiplyScalar(100));
+    this.directionalLight?.lookAt(new THREE.Vector3(0, 0, 0));
+    this.directionalLight?.updateMatrixWorld();
+    this.directionalLight!.intensity = Math.max(0.1, this.sunPosition.y * 0.5 + 0.5);
+
+    this.ambientLight!.intensity = Math.max(0.1, this.sunPosition.y * 0.5 + 0.5);
+    this.hemisphericLight!.intensity = Math.max(0.1, this.sunPosition.y * 0.5 + 0.5);
   }
 
   update(time: number, delta: number, args: any) {

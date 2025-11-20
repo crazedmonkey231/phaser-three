@@ -676,7 +676,7 @@ export class Editor implements IService {
         onChange: (newValue: number) => {
           switch (name) {
             case "Time of Day":
-              this.level.weather.setTimeOfDay(newValue);
+              this.level.weather.setTimeOfDay(newValue, true);
               slider.setText(`Time of Day: ${newValue.toFixed(2)}`);
               break;
             case "Translation Snap":

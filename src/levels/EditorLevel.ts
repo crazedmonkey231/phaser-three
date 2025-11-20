@@ -33,6 +33,16 @@ export class EditorLevel extends Level {
     const axisHelper = new THREE.AxesHelper(5);
     this.add(axisHelper);
 
+    const ground = new THREE.Mesh(
+      new THREE.PlaneGeometry(100, 100),
+      new THREE.MeshStandardMaterial({ color: 0x808080, roughness: 0.8 })
+    );
+    ground.rotation.x = -Math.PI / 2;
+    ground.receiveShadow = true;
+    ground.castShadow = true;
+    ground.position.y = -3;
+    this.add(ground);
+
     // Load level from JSON
     Level.importJsonFile(this, "level");
 
