@@ -107,7 +107,7 @@ export class Weather implements IService {
     );
 
     this.sky?.material.uniforms['sunPosition'].value.copy(this.sunPosition);
-    renderer.toneMappingExposure = Math.max(0.1, this.sunPosition.y * 0.5);
+    renderer.toneMappingExposure = Math.max(0.1, this.sunPosition.y * 0.3);
     if (this.sky) this.sky.material.needsUpdate = true;
 
     this.directionalLight?.position.copy(this.sunPosition.clone().multiplyScalar(100));
