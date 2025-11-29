@@ -8,6 +8,7 @@ const LEADERBOARD_API_URL = `${SERVER_URL}/api/leaderboard/${GAME_ID}`;
 export interface IPlayerData {
   name: string;
   score: number;
+  speed: number;
   transform: ITransform
 }
 
@@ -21,6 +22,7 @@ export class MultiplayerManager {
         roomId: roomId,
         name: playerData.name,
         score: playerData.score,
+        speed: playerData.speed,
         transform: playerData.transform ? JSON.stringify(playerData.transform) : undefined,
       },
     });

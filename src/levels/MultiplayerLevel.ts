@@ -6,7 +6,13 @@ import { Level } from "../Level";
 export class MultiplayerLevel extends Level {
   roomId: string = "lobby";
   playerName: string = "Player";
-  players: Map<string, THREE.Mesh> = new Map();
+  players: Map<any, THREE.Mesh> = new Map();
+  space: Phaser.Input.Keyboard.Key | undefined;
+  syncTimer: number = 0;
+  moveSpeed: number = 0.1; // units per second
+  playerPosition: THREE.Vector3 = new THREE.Vector3();
+  playerRotation: THREE.Euler = new THREE.Euler();
+  playerScale: THREE.Vector3 = new THREE.Vector3(1, 1, 1);
   constructor(baseScene: GameScene) {
     super(baseScene);
   }
@@ -17,6 +23,10 @@ export class MultiplayerLevel extends Level {
 
     this.getOrbitControls();
 
+    this.space = this.gameScene.addKey(
+      Phaser.Input.Keyboard.KeyCodes.SPACE
+    );
+
     // Set up post-processing effects here, Example:
     this.postprocess.addRender("render");
     this.postprocess.addFXAA("fxaa");
@@ -26,13 +36,16 @@ export class MultiplayerLevel extends Level {
     const randX = Math.random() * 20 - 10;
     const randZ = Math.random() * 20 - 10;
 
+    this.playerPosition.set(randX, 0, randZ);
+
     const mgr = this.gameScene.initMultiplayer(this.roomId, {
       name: this.playerName,
       score: 0,
+      speed: this.moveSpeed,
       transform: {
-        position: new THREE.Vector3(randX, 0, randZ),
-        rotation: new THREE.Euler(0, 0, 0),
-        scale: new THREE.Vector3(1, 1, 1),
+        position: this.playerPosition,
+        rotation: this.playerRotation,
+        scale: this.playerScale,
       },
     });
 
@@ -40,13 +53,13 @@ export class MultiplayerLevel extends Level {
       console.log("Multiplayer init data:", data);
       const players: Record<string, any> = data.players;
       for (const id in players) {
-        this.addPlayer(players[id]);
+        this.addPlayer(id, players[id]);
       }
     });
 
     mgr.on("playerJoined", (data: any) => {
       console.log("Player joined:", data);
-      this.addPlayer(data);
+      this.addPlayer(data.id, data);
     });
 
     mgr.on("playerLeft", (id: any) => {
@@ -58,20 +71,28 @@ export class MultiplayerLevel extends Level {
       }
     });
 
-    mgr.on("update", (data: any) => {
-      // Handle player updates here
-      this.updatePlayer(data);
+    mgr.on("playerMoved", (data: any) => {
+      const mesh = this.players.get(data.id);
+      if (mesh) {
+        const position = data.position;
+        mesh.position.set(
+          position.x,
+          position.y,
+          position.z
+        );
+      }
     });
   }
 
-  addPlayer(data: any): void {
+  addPlayer(id: any, data: any): void {
+    console.log("Adding player:", data);
     // Add player representation to the level
     const geometry = new THREE.BoxGeometry(1, 1, 1);
     const material = new THREE.MeshBasicMaterial({
-      color: Math.random() * 0xffffff,
+      color: 0xffffff,
     });
     const mesh = new THREE.Mesh(geometry, material);
-    const transform = JSON.parse(data.transform);
+    const transform = data.transform;
     mesh.position.set(
       transform.position.x,
       transform.position.y,
@@ -84,39 +105,29 @@ export class MultiplayerLevel extends Level {
     );
     mesh.scale.set(transform.scale.x, transform.scale.y, transform.scale.z);
     this.add(mesh);
-    this.players.set(data.id, mesh);
-  }
-
-  updatePlayer(data: any): void {
-    // Update player representation in the level
-    const players = data.players;
-    for (const id in players) {
-      if (id !== data.id) {
-        this.updatePlayerTransform(players[id]);
-      }
-    }
-  }
-
-  updatePlayerTransform(data: any): void {
-    const mesh = this.players.get(data.id);
-    if (mesh) {
-      const transform = JSON.parse(data.transform);
-      mesh.position.set(
-        transform.position.x,
-        transform.position.y,
-        transform.position.z
-      );
-      mesh.rotation.set(
-        transform.rotation._x,
-        transform.rotation._y,
-        transform.rotation._z
-      );
-      mesh.scale.set(transform.scale.x, transform.scale.y, transform.scale.z);
-    }
+    this.players.set(id, mesh);
   }
 
   update(time: number, dt: number, args: any) {
     super.update(time, dt, args);
+    const mgr = this.gameScene.getMultiplayerManager();
+    if (!mgr) return;
+    if (this.space && this.space.isDown) {
+      this.syncTimer += dt;
+      if (this.syncTimer >= 0.01) {
+        this.syncTimer = 0;
+        mgr.emit("playerInput", {
+          up: true,
+          transform: {
+            position: this.playerPosition,
+            rotation: this.playerRotation,
+            scale: this.playerScale,
+          },
+        });
+      }
+    } else {
+      this.syncTimer = 0;
+    }
   }
 
   dispose(): void {

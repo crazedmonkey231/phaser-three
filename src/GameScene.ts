@@ -41,7 +41,7 @@ export class GameScene extends Phaser.Scene {
     const step = Math.min(delta / 1000, 0.1);
     for (let i = 0; i < 10; i++) {
       const subStep = step / 10;
-      this.activeLevel.update(time, subStep * 1000, { hud: this.hud });
+      this.activeLevel.update(time, subStep, { hud: this.hud });
     }
     this.activeLevel.render();
   }
@@ -105,9 +105,9 @@ export class GameScene extends Phaser.Scene {
   }
 
   /** Helper to add a keyboard key listener */
-  addKey(key: string) {
+  addKey(key: string | number): Phaser.Input.Keyboard.Key | undefined {
     if (!this.input || !this.input.keyboard) {
-      return null;
+      return undefined;
     }
     return this.input.keyboard.addKey(key);
   }
