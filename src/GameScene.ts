@@ -1,6 +1,7 @@
 import { Level } from "./Level";
 import { updateListener } from "./Audio";
 import { IThing } from "./Types";
+import { IPlayerData, MultiplayerManager } from "./multiplayer/multiplayerManager";
 
 /** Configuration interface for GameScene */
 export interface GameSceneConfig {
@@ -13,6 +14,7 @@ export class GameScene extends Phaser.Scene {
   private hud: Phaser.GameObjects.Graphics = null as any;
   private activeLevel: Level = null as any;
   private levels: Level[] = [];
+  private multiplayerMgr: MultiplayerManager | null = null; 
   constructor(config: GameSceneConfig) { 
     super(config.name);
     this.levels = config.levels.map(LevelClass => new LevelClass(this));
@@ -45,6 +47,10 @@ export class GameScene extends Phaser.Scene {
   }
 
   dispose() {
+    if (this.multiplayerMgr) {
+      this.multiplayerMgr.disconnect();
+      this.multiplayerMgr = null;
+    }
     this.levels.forEach(level => level.dispose());
     this.levels = [];
     this.activeLevel = null as any;
@@ -104,5 +110,20 @@ export class GameScene extends Phaser.Scene {
       return null;
     }
     return this.input.keyboard.addKey(key);
+  }
+
+  /** Initialize multiplayer manager */
+  initMultiplayer(roomId: string, playerData: IPlayerData) {
+    if (this.multiplayerMgr) {
+      console.warn("MultiplayerManager already initialized");
+      return this.multiplayerMgr;
+    }
+    this.multiplayerMgr = new MultiplayerManager(roomId, playerData);
+    return this.multiplayerMgr;
+  }
+
+  /** Get the multiplayer manager */
+  getMultiplayerManager() {
+    return this.multiplayerMgr;
   }
 }

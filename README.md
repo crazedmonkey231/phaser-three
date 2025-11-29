@@ -57,6 +57,7 @@ Code named **Orbitworks**, this is a simple starter project that combines the po
   - `misc/` - Regular classes
   - `object3D/` - Regular Three.js objects
   - `voxel/` - Custom voxel module
+  - `multiplayer/` - Basic multiplayer module
 
 - `public/` - Static assets
   - `textures/` - Image assets and sprites

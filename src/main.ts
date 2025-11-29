@@ -3,6 +3,8 @@ import { GameScene } from "./GameScene";
 import { TemplateLevel } from "./levels/TemplateLevel";
 import { LevelEditorScene } from "./scenes/LevelEditorScene";
 import { VoxelLevel } from "./levels/VoxelLevel";
+import { MultiplayerLevel } from "./levels/MultiplayerLevel";
+import { MultiplayerScene } from "./scenes/MultiplayerScene";
 
 
 class Scene extends GameScene {
@@ -12,7 +14,8 @@ class Scene extends GameScene {
       levels: [
         // TestLevel
         // TemplateLevel
-        VoxelLevel
+        // VoxelLevel
+        MultiplayerLevel
       ]
     });
   }
@@ -37,7 +40,7 @@ const phaserGame = new Phaser.Game({
   dom: {
     createContainer: true
   },
-  scene: [LevelEditorScene, Scene],
+  scene: [MultiplayerScene],
   input: { activePointers: 3 } // multi-touch friendly
 });
 
