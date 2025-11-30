@@ -85,6 +85,7 @@ export interface ICollisionHandler {
 /** Interface for all things in the game */
 export interface IThing extends IService {
   level: Level;
+  id: string;
   name: string;
   type: string;
   group: THREE.Group;

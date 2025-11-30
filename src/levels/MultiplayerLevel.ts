@@ -1,19 +1,20 @@
 import * as THREE from "three";
 import { GameScene } from "../GameScene";
 import { Level } from "../Level";
+import { Thing } from "../Thing";
+import { IThing } from "../Types";
+import { BasicBoxThing } from "../things/BasicBoxThing";
 
 /** A template level class to be copied and customized */
 export class MultiplayerLevel extends Level {
   roomId: string = "lobby";
   playerName: string = "Player";
-  players: Map<any, THREE.Mesh> = new Map();
   socketId: any;
   syncTimer: number = 0;
   moveSpeed: number = 0.2; // units per second
   playerPosition: THREE.Vector3 = new THREE.Vector3();
   playerRotation: THREE.Euler = new THREE.Euler();
   playerScale: THREE.Vector3 = new THREE.Vector3(1, 1, 1);
-  levelThings: Map<string, THREE.Mesh> = new Map();
   private tmpVec: THREE.Vector3 = new THREE.Vector3();
   private startButton!: Phaser.GameObjects.Text;
   private descText!: Phaser.GameObjects.Text;
@@ -107,6 +108,41 @@ export class MultiplayerLevel extends Level {
   createLobbyUI(): void {
     // Create any lobby UI elements here
     // For example, a simple text display
+    const mgr = this.gameScene.getMultiplayerManager();
+    if (!mgr) return;
+    const rooms = ["room1", "room2", "room3"];
+    let yOffset = 100;
+    const buttons: Phaser.GameObjects.Text[] = [];
+    rooms.forEach((roomId) => {
+      const roomText = this.gameScene.add
+        .text(
+          this.gameScene.cameras.main.centerX,
+          yOffset,
+          `Join ${roomId}`,
+          { 
+            fontFamily: "Segoe UI",
+            fontStyle: "bold",
+            fontSize: "48px", 
+            color: "#ffffff" 
+          }
+        )
+        .setOrigin(0.5)
+        .setInteractive({ useHandCursor: true, draggable: false, pixelPerfect: false })
+        .setDepth(1000);
+      roomText.on("pointerover", () => {
+        roomText.setStyle({ color: "#00ccff" });
+      });
+      roomText.on("pointerout", () => {
+        roomText.setStyle({ color: "#ffffff" });
+      });
+      roomText.on("pointerdown", () => {
+        this.roomId = roomId;
+        buttons.forEach((btn) => btn.destroy());
+        mgr.emit("playerChangeRoom", roomId);
+      });
+      buttons.push(roomText);
+      yOffset += 80;
+    });
   }
 
   resizeWidgets(): void {
@@ -135,43 +171,42 @@ export class MultiplayerLevel extends Level {
 
     mgr.on("init", (data: any) => {
       console.log("Multiplayer init data:", data);
+      this.removeAllThings(true);
       this.socketId = data.you;
-      const players: Record<string, any> = data.players;
-      for (const id in players) {
-        this.addPlayer(id, players[id]);
-      }
-      const things = data.things;
-      if (things.length > 0) {
-        console.log("Existing things in level:", things);
-        for (const thingId in things) {
-          this.initThingFromData(thingId, things[thingId]);
-        }
-      } else {
-        console.log("No existing things in level.");
-        this.createWorld();
+      const things: Record<string, any> = data.things;
+      for (const thingId in things) {
+        Thing.fromJsonObject(this, things[thingId]);
       }
     });
 
     mgr.on("playerJoined", (data: any) => {
       console.log("Player joined:", data);
-      this.addPlayer(data.id, data);
+      const things: Record<string, any> = data.things;
+      for (const thingId in things) {
+        if (!this.getThingById(thingId)) {
+          Thing.fromJsonObject(this, things[thingId]);
+        }
+      }
     });
 
     mgr.on("playerLeft", (id: any) => {
       console.log("Player left:", id);
-      const mesh = this.players.get(id);
-      if (mesh) {
-        this.remove(mesh);
-        this.players.delete(id);
+      const thing = this.getThingById(id);
+      if (thing) {
+        this.removeThing(thing, true, false);
+      }
+      if (id === this.socketId) {
+        // We left the room, clean up
+        this.removeAllThings(true);
       }
     });
 
-    mgr.on("playerMoved", (data: any) => {
-      const mesh = this.players.get(data.id);
-      if (mesh) {
+    mgr.on("thingMoved", (data: any) => {
+      const thing = this.getThingById(data.id);
+      if (thing) {
         const position = data.position;
         this.tmpVec.set(position.x, position.y, position.z);
-        mesh.position.lerp(this.tmpVec, 0.5);
+        thing.group.position.lerp(this.tmpVec, 0.5);
       }
     });
 
@@ -179,105 +214,19 @@ export class MultiplayerLevel extends Level {
     //   // this.gameScene.input.mouse?.requestPointerLock();
     //   const randX = Math.random() * 20 - 10;
     //   const randZ = Math.random() * 20 - 10;
-    //   mgr.emit("spawnThing", {
-    //     id: `${this.socketId}_thing_${Date.now()}`,
-    //     type: "cube",
-    //     transform: {
-    //       position: {
-    //         x: this.playerPosition.x + randX,
-    //         y: this.playerPosition.y,
-    //         z: this.playerPosition.z + randZ,
-    //       },
-    //       rotation: {
-    //         _x: 0,
-    //         _y: 0,
-    //         _z: 0,
-    //         isEuler: true,
-    //       },
-    //       scale: {
-    //         x: 1,
-    //         y: 1,
-    //         z: 1,
-    //       },
-    //     },
-    //   });
+    //   new BasicBoxThing(this, `Box_${Math.random().toString(36).substring(2, 9)}`, new THREE.Vector3(randX, 0.5, randZ));
     // });
 
     mgr.on("thingSpawned", (data: any) => {
+      if (this.getThingById(data.id)) return;
       console.log("Thing spawned:", data);
-      this.initThingFromData(data.id, data);
-    });
-
-    mgr.on("thingDespawned", (thingId: string) => {
-      console.log("Thing despawned:", thingId);
-      const mesh = this.levelThings.get(thingId);
-      if (mesh) {
-        this.remove(mesh);
-        this.levelThings.delete(thingId);
-      }
+      Thing.fromJsonObject(this, data);
     });
 
     const gridHelper = new THREE.GridHelper(10, 10);
     this.add(gridHelper);
     const axisHelper = new THREE.AxesHelper(5);
     this.add(axisHelper);
-  }
-
-  addPlayer(id: any, data: any): void {
-    console.log("Adding player:", data);
-    // Add player representation to the level
-    const geometry = new THREE.BoxGeometry(1, 1, 1);
-    const material = new THREE.MeshBasicMaterial({
-      color: 0xffffff,
-    });
-    const mesh = new THREE.Mesh(geometry, material);
-    mesh.name = `player_${id}`;
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
-    const transform = data.transform;
-    mesh.position.set(
-      transform.position.x,
-      transform.position.y,
-      transform.position.z
-    );
-    mesh.rotation.set(
-      transform.rotation._x,
-      transform.rotation._y,
-      transform.rotation._z
-    );
-    mesh.scale.set(transform.scale.x, transform.scale.y, transform.scale.z);
-    this.add(mesh);
-    this.players.set(id, mesh);
-    mesh.userData.playerId = id; // Store playerId for reference
-  }
-
-  initThingFromData(
-    thingId: string,
-    data: any
-  ): void {
-    // Example: create a simple cube thing based on data
-    console.log("Initializing thing from data:", thingId, data);
-    const geometry = new THREE.BoxGeometry(1, 1, 1);
-    const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-    const mesh = new THREE.Mesh(geometry, material);
-    mesh.name = `thing_${thingId}`;
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
-    const transform = data.transform;
-    mesh.position.set(
-      transform.position.x,
-      transform.position.y,
-      transform.position.z
-    );
-    mesh.rotation.set(
-      transform.rotation._x,
-      transform.rotation._y,
-      transform.rotation._z
-    );
-    mesh.scale.set(transform.scale.x, transform.scale.y, transform.scale.z);
-    this.add(mesh);
-    mesh.userData.thingId = thingId; // Store thingId for reference
-    this.levelThings.set(thingId, mesh);
   }
 
   createWorld(): void {
@@ -298,11 +247,41 @@ export class MultiplayerLevel extends Level {
     // }
   }
 
+  addThing(thing: IThing | IThing[]): void {
+    super.addThing(thing);
+    const mgr = this.gameScene.getMultiplayerManager();
+    if (mgr) {
+      if (Array.isArray(thing)) {
+        for (const t of thing) {
+          mgr.emit("addThing", t.toJsonObject());
+        }
+      } else {
+        mgr.emit("addThing", thing.toJsonObject());
+      }
+    }
+  }
+
+  removeThing(thing: IThing, dispose?: boolean, replicated: boolean = false): void {
+    super.removeThing(thing, dispose);
+    if (!replicated) {
+      const mgr = this.gameScene.getMultiplayerManager();
+      if (mgr) {
+        mgr.emit("removeThing", { id: thing.id });
+      }
+    }
+  }
+
+  removeAllThings(dispose?: boolean, replicated?: boolean): void {
+    this.things.forEach(thing => {
+      this.removeThing(thing, dispose, replicated);
+    });
+  }
+
   update(time: number, dt: number, args: any) {
     super.update(time, dt, args);
     const mgr = this.gameScene.getMultiplayerManager();
     if (!mgr) return;
-    const mesh = this.players.get(this.socketId);
+    const mesh = this.getThingById(this.socketId)?.group;
     if (mesh) {
       this.playerPosition.copy(mesh.position);
       this.playerRotation.copy(mesh.rotation);

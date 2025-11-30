@@ -158,6 +158,15 @@ export class Level extends THREE.Scene implements IService {
       this.removeThing(thing, dispose);
     });
   }
+
+  getThingById(id: string): IThing | null {
+    for (const thing of this.things) {
+      if (thing.id === id) {
+        return thing;
+      }
+    }
+    return null;
+  }
   
   /** Create and return a Editor
    * 

@@ -18,6 +18,7 @@ import { ColliderShape, GameplayTag, IDamage, IThing } from "./Types";
  */
 export abstract class Thing implements IThing {
   level: Level = null as any;
+  id: string = `Thing_${Math.random().toString(36).substring(2, 9)}`;
   name: string;
   type: string;
   group: THREE.Group;
@@ -95,19 +96,17 @@ export abstract class Thing implements IThing {
   kill(dispose: boolean): void {
     this.alive = false;
     this.group.visible = false;
-    if (dispose) {
-      this.dispose();
-    }
+    this.level.removeThing(this, dispose);
   }
 
   /** Fully disposes of the thing and its resources */
   dispose(): void {
     this.alive = false;
     this.collider = undefined;
+    this.velocity = undefined;
     this.tags.clear();
     if (this.level && this.group) {
-      const threeScene = this.level.getGameScene()?.getThreeScene();
-      threeScene?.removeThing(this);
+      this.level.removeThing(this);
       this.group.traverse((child) => {
         const geom = (child as THREE.Mesh).geometry;
         const mat = (child as THREE.Mesh).material;
@@ -131,11 +130,13 @@ export abstract class Thing implements IThing {
   /** Exports the thing to a JSON object. */
   toJsonObject(): any {
     return {
+      id: this.id,
       name: this.name,
       type: this.type,
       alive: this.alive,
       timeAlive: this.timeAlive,
       tags: Array.from(this.tags),
+      gameplayTags: Array.from(this.gameplayTags),
       velocity: this.velocity,
       speed: this.speed,
       health: this.health,
@@ -156,9 +157,11 @@ export abstract class Thing implements IThing {
   static fromJsonObject(level: Level, json: any): IThing {
     const classType = level.defs[json.type];
     const thing: IThing = new classType(level, json.name, json.type);
+    thing.id = json.id;
     thing.alive = json.alive;
     thing.timeAlive = json.timeAlive;
     thing.tags = new Set(json.tags);
+    thing.gameplayTags = new Set(json.gameplayTags);
     thing.velocity = json.velocity;
     thing.speed = json.speed;
     thing.health = json.health;

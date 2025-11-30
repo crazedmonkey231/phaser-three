@@ -5,8 +5,9 @@ import { Thing } from "../Thing";
 
 /** Example subclass of Thing using a cube mesh */
 export class BasicBoxThing extends Thing {
-  constructor(level: Level, name: string = "boxThing") {
-    super(level, name, 'BasicBox');
+  constructor(level: Level, name: string = "boxThing", position: THREE.Vector3) {
+    super(level, name, 'BasicBoxThing');
+    this.group.position.copy(position)
   }
 
   create(): void {
