@@ -3,7 +3,6 @@ import { GameScene } from "../GameScene";
 import { Level } from "../Level";
 import { Thing } from "../Thing";
 import { IThing } from "../Types";
-import { BasicBoxThing } from "../things/BasicBoxThing";
 
 /** A template level class to be copied and customized */
 export class MultiplayerLevel extends Level {
@@ -100,7 +99,7 @@ export class MultiplayerLevel extends Level {
     this.startButton.on("pointerdown", () => {
       this.startButton.destroy();
       this.descText.destroy();
-      this.playerPosition.set(0, 0, 0);
+      this.playerPosition.set(0, 10, 0);
       this.initializeMultiplayer();
       this.createLobbyUI();
     });
@@ -227,6 +226,24 @@ export class MultiplayerLevel extends Level {
     //   // Handle server tick if needed
     // });
 
+    mgr.on("serverUpdate", (data: any) => {
+      const things = data.things;
+      for (const thingData of things) {
+        const { id, position, velocity, speed } = thingData;
+        const thing = this.getThingById(id);
+        if (thing) {
+          this.tmpVec.set(position.x, position.y, position.z);
+          thing.group.position.lerp(this.tmpVec, 0.5);
+          if (velocity && thing.velocity) {
+            thing.velocity.set(velocity.x, velocity.y, velocity.z);
+          } else if (thing.velocity) {
+            thing.velocity.set(0, 0, 0);
+          } 
+          thing.speed = speed;
+        }
+      }
+    });
+
     // this.gameScene.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
     //   // this.gameScene.input.mouse?.requestPointerLock();
     //   const randX = Math.random() * 20 - 10;
@@ -305,7 +322,7 @@ export class MultiplayerLevel extends Level {
       );
       this.camera.lookAt(this.playerPosition);
     }
-    const w = this.inputs.w;;
+    const w = this.inputs.w;
     const a = this.inputs.a;
     const s = this.inputs.s;
     const d = this.inputs.d;
