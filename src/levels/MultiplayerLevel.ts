@@ -15,10 +15,11 @@ export class MultiplayerLevel extends Level {
   playerPosition: THREE.Vector3 = new THREE.Vector3();
   playerRotation: THREE.Euler = new THREE.Euler();
   playerScale: THREE.Vector3 = new THREE.Vector3(1, 1, 1);
+  inputs: { [key: string]: Phaser.Input.Keyboard.Key | undefined } = {};
   private tmpVec: THREE.Vector3 = new THREE.Vector3();
   private startButton!: Phaser.GameObjects.Text;
   private descText!: Phaser.GameObjects.Text;
-  inputs: { [key: string]: Phaser.Input.Keyboard.Key | undefined } = {};
+  private lobbyUI: Phaser.GameObjects.Text[] = [];
   constructor(baseScene: GameScene) {
     super(baseScene);
   }
@@ -110,13 +111,17 @@ export class MultiplayerLevel extends Level {
     // For example, a simple text display
     const mgr = this.gameScene.getMultiplayerManager();
     if (!mgr) return;
-    const rooms = ["room1", "room2", "room3"];
-    let yOffset = 100;
+    if (this.lobbyUI.length > 0) {
+      this.lobbyUI.forEach((btn) => btn.destroy());
+      this.lobbyUI = [];
+    }
+    const rooms = ["room1", "room2", "room3", "room4", "room5"];
+    let yOffset = 80;
     const buttons: Phaser.GameObjects.Text[] = [];
     rooms.forEach((roomId) => {
       const roomText = this.gameScene.add
         .text(
-          this.gameScene.cameras.main.centerX,
+          this.gameScene.game.canvas.width - 200,
           yOffset,
           `Join ${roomId}`,
           { 
@@ -141,8 +146,9 @@ export class MultiplayerLevel extends Level {
         mgr.emit("playerChangeRoom", roomId);
       });
       buttons.push(roomText);
-      yOffset += 80;
+      yOffset += 60;
     });
+    this.lobbyUI = buttons;
   }
 
   resizeWidgets(): void {
@@ -155,6 +161,12 @@ export class MultiplayerLevel extends Level {
       50,
       this.gameScene.cameras.main.height - 50
     );
+    if (this.lobbyUI.length > 0) {
+      this.lobbyUI.forEach((btn) => btn.setPosition(
+        this.gameScene.game.canvas.width - 200,
+        btn.y
+      ));
+    }
   }
 
   initializeMultiplayer(): void {
@@ -210,18 +222,17 @@ export class MultiplayerLevel extends Level {
       }
     });
 
+    // mgr.on("serverTick", (data: any) => {
+    //   const timestamp = data.timestamp;
+    //   // Handle server tick if needed
+    // });
+
     // this.gameScene.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
     //   // this.gameScene.input.mouse?.requestPointerLock();
     //   const randX = Math.random() * 20 - 10;
     //   const randZ = Math.random() * 20 - 10;
     //   new BasicBoxThing(this, `Box_${Math.random().toString(36).substring(2, 9)}`, new THREE.Vector3(randX, 0.5, randZ));
     // });
-
-    mgr.on("thingSpawned", (data: any) => {
-      if (this.getThingById(data.id)) return;
-      console.log("Thing spawned:", data);
-      Thing.fromJsonObject(this, data);
-    });
 
     const gridHelper = new THREE.GridHelper(10, 10);
     this.add(gridHelper);
@@ -310,12 +321,7 @@ export class MultiplayerLevel extends Level {
           backward: s && s.isDown,
           left: a && a.isDown,
           right: d && d.isDown,
-          jump: space && space.isDown,
-          transform: {
-            position: this.playerPosition,
-            rotation: this.playerRotation,
-            scale: this.playerScale,
-          },
+          jump: space && space.isDown
         });
       }
     } else {

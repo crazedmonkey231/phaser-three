@@ -44,7 +44,7 @@ export class Level extends THREE.Scene implements IService {
   name: string = "Level";
   gameScene: GameScene;
   camera: THREE.PerspectiveCamera | THREE.OrthographicCamera;
-  things: Set<IThing> = new Set();
+  things: Map<string, IThing> = new Map();
   postprocess: Postprocess;
   weather: Weather;
   collisionMgr: CollisionManager;
@@ -89,7 +89,7 @@ export class Level extends THREE.Scene implements IService {
     if (this.paused) return;
     this.postprocess.update(time, dt, args);
     this.weather.update(time, dt, args);
-    for (const thing of this.things) {
+    for (const thing of this.things.values()) {
       if (thing.alive) {
         thing.update(time, dt, { level: this, ...args });
       }
@@ -139,14 +139,14 @@ export class Level extends THREE.Scene implements IService {
       thing.forEach(t => this.addThing(t));
     } else if (thing.group) {
       this.add(thing.group);
-      this.things.add(thing);
+      this.things.set(thing.id, thing);
     }
   }
 
   removeThing(thing: IThing, dispose: boolean = false) {
     if (thing.group) {
       this.remove(thing.group);
-      this.things.delete(thing);
+      this.things.delete(thing.id);
     }
     if (dispose) {
       thing.dispose();
@@ -160,12 +160,7 @@ export class Level extends THREE.Scene implements IService {
   }
 
   getThingById(id: string): IThing | null {
-    for (const thing of this.things) {
-      if (thing.id === id) {
-        return thing;
-      }
-    }
-    return null;
+    return this.things.get(id) || null;
   }
   
   /** Create and return a Editor
@@ -193,7 +188,7 @@ export class Level extends THREE.Scene implements IService {
   }
 
   getThingsJsonObject(): any[] {
-    return Array.from(this.things).map(thing => thing.toJsonObject());
+    return Array.from(this.things.values()).map(thing => thing.toJsonObject());
   }
 
   getThingsJsonString(): string {
