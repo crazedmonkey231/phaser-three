@@ -52,10 +52,11 @@ export class Level extends THREE.Scene implements IService {
   audioMgr: AudioManager;
   octree: Octree | null = null;
   defs: Record<string, any> = Defs;
+  private paused: boolean = false;
   private orbitControls: OrbitControls | null = null;
   private editor: Editor | null = null;
   private resizeObserver: ResizeObserver;
-  private paused: boolean = false;
+  private thingCache: Map<string, IThing> = new Map();
   constructor(gameScene: GameScene) {
     super();
     this.gameScene = gameScene;
@@ -134,22 +135,39 @@ export class Level extends THREE.Scene implements IService {
     return this.gameScene;
   }
 
-  addThing(thing: IThing | IThing[]) {
-    if (Array.isArray(thing)) {
-      thing.forEach(t => this.addThing(t));
-    } else if (thing.group) {
-      this.add(thing.group);
-      this.things.set(thing.id, thing);
+  addThing(thing: IThing, position?: THREE.Vector3): { fromCache: boolean; thing: IThing } {
+    const hasCached = this.thingCache.has(thing.id);
+    if (hasCached) {
+      const cachedThing = this.thingCache.get(thing.id);
+      if (cachedThing) {
+        thing = cachedThing;
+        this.thingCache.delete(thing.id);
+      }
     }
+    thing.alive = true;
+    thing.group.visible = true;
+    this.things.set(thing.id, thing);
+    if (position && thing.group) {
+      thing.group.position.copy(position);
+    }
+    if (thing.group) {
+      this.add(thing.group);
+    }
+    return { fromCache: hasCached, thing: thing };
   }
 
   removeThing(thing: IThing, dispose: boolean = false) {
     if (thing.group) {
+      thing.alive = false;
+      thing.group.visible = false;
       this.remove(thing.group);
       this.things.delete(thing.id);
+      this.thingCache.set(thing.id, thing);
     }
     if (dispose) {
-      thing.dispose();
+      if (this.thingCache.has(thing.id)) {
+        this.thingCache.delete(thing.id);
+      }
     }
   }
 

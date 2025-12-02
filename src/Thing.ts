@@ -87,15 +87,11 @@ export abstract class Thing implements IThing {
   }
 
   respawn(position: THREE.Vector3): void {
-    this.alive = true;
-    this.group.position.copy(position);
-    this.group.visible = true;
+    this.level.addThing(this, position);
   }
 
   /** Marks the thing as dead, sets to not visible, can be respawned or optionally fully disposes of it */
   kill(dispose: boolean): void {
-    this.alive = false;
-    this.group.visible = false;
     this.level.removeThing(this, dispose);
   }
 

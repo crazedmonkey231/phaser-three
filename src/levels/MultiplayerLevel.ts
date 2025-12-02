@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { GameScene } from "../GameScene";
 import { Level } from "../Level";
 import { Thing } from "../Thing";
-import { IThing } from "../Types";
+import { IThing, XYZ } from '../Types';
 
 /** A template level class to be copied and customized */
 export class MultiplayerLevel extends Level {
@@ -171,8 +171,6 @@ export class MultiplayerLevel extends Level {
   initializeMultiplayer(): void {
     const mgr = this.gameScene.initMultiplayer(this.roomId, {
       name: this.playerName,
-      score: 0,
-      speed: this.moveSpeed,
       transform: {
         position: this.playerPosition,
         rotation: this.playerRotation,
@@ -192,11 +190,17 @@ export class MultiplayerLevel extends Level {
 
     mgr.on("playerJoined", (data: any) => {
       console.log("Player joined:", data);
-      const things: Record<string, any> = data.things;
-      for (const thingId in things) {
-        if (!this.getThingById(thingId)) {
-          Thing.fromJsonObject(this, things[thingId]);
+      const player = data.player;
+      if (player.id === this.socketId) {
+        this.removeAllThings(true);
+        const things: Record<string, any> = data.things;
+        for (const thingId in things) {
+          if (!this.getThingById(thingId)) {
+            Thing.fromJsonObject(this, things[thingId]);
+          }
         }
+      } else {
+        Thing.fromJsonObject(this, player);
       }
     });
 
@@ -229,17 +233,22 @@ export class MultiplayerLevel extends Level {
     mgr.on("serverUpdate", (data: any) => {
       const things = data.things;
       for (const thingData of things) {
-        const { id, position, velocity, speed } = thingData;
+        const { id, position, velocity, speed, data } = thingData;
         const thing = this.getThingById(id);
         if (thing) {
           this.tmpVec.set(position.x, position.y, position.z);
           thing.group.position.lerp(this.tmpVec, 0.5);
-          if (velocity && thing.velocity) {
-            thing.velocity.set(velocity.x, velocity.y, velocity.z);
-          } else if (thing.velocity) {
-            thing.velocity.set(0, 0, 0);
-          } 
+          if (thing.velocity) {
+            thing.velocity.x = velocity.x;
+            thing.velocity.y = velocity.y;
+            thing.velocity.z = velocity.z;
+          } else {
+            thing.velocity = new THREE.Vector3(velocity.x, velocity.y, velocity.z);
+          }
           thing.speed = speed;
+          for (const key in data) {
+            thing.data[key] = data[key];
+          }
         }
       }
     });
@@ -275,18 +284,17 @@ export class MultiplayerLevel extends Level {
     // }
   }
 
-  addThing(thing: IThing | IThing[]): void {
-    super.addThing(thing);
+  addThing(thing: IThing): { fromCache: boolean; thing: IThing } {
+    const { fromCache, thing: addedThing } = super.addThing(thing);
     const mgr = this.gameScene.getMultiplayerManager();
     if (mgr) {
-      if (Array.isArray(thing)) {
-        for (const t of thing) {
-          mgr.emit("addThing", t.toJsonObject());
-        }
+      if (!fromCache) {
+        mgr.emit("addThing", addedThing.toJsonObject());
       } else {
-        mgr.emit("addThing", thing.toJsonObject());
+        mgr.emit("respawnThing", { id: addedThing.id });
       }
     }
+    return { fromCache, thing: addedThing };
   }
 
   removeThing(thing: IThing, dispose?: boolean, replicated: boolean = false): void {
@@ -294,7 +302,11 @@ export class MultiplayerLevel extends Level {
     if (!replicated) {
       const mgr = this.gameScene.getMultiplayerManager();
       if (mgr) {
-        mgr.emit("removeThing", { id: thing.id });
+        if (dispose) {
+          mgr.emit("disposeThing", { id: thing.id });
+        } else {
+          mgr.emit("removeThing", { id: thing.id });
+        }
       }
     }
   }
