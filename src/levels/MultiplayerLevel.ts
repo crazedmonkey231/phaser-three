@@ -178,6 +178,8 @@ export class MultiplayerLevel extends Level {
       },
     });
 
+    // -- Connection and room management --
+
     mgr.on("init", (data: any) => {
       console.log("Multiplayer init data:", data);
       this.removeAllThings(true);
@@ -216,6 +218,9 @@ export class MultiplayerLevel extends Level {
       }
     });
 
+    // -- Movement and state updates --
+
+    // Handle when a new thing changes position
     mgr.on("thingMoved", (data: any) => {
       const thing = this.getThingById(data.id);
       if (thing) {
@@ -225,6 +230,10 @@ export class MultiplayerLevel extends Level {
       }
     });
 
+     
+    // -- State synchronization --
+
+    // Optional server tick handler
     // mgr.on("serverTick", (data: any) => {
     //   const timestamp = data.timestamp;
     //   // Handle server tick if needed
@@ -252,6 +261,8 @@ export class MultiplayerLevel extends Level {
         }
       }
     });
+
+    // -- End of multiplayer setup --
 
     // this.gameScene.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
     //   // this.gameScene.input.mouse?.requestPointerLock();
